@@ -474,7 +474,8 @@ int Solver::analyze(const Clause conflicting) {
 	else {
 		add_clause(new_clause, watch_lit, new_clause.size() - 1);
 	}
-	// TODO: add call to method calculateLBD
+	int lbd_score = LBD_score_calculation(new_clause);
+	lbd_score_map.insert(pair<clause_t&, int>(new_clause.cl(), lbd_score));
 	
 
 	if (verbose_now()) {	
