@@ -306,6 +306,7 @@ class Solver {
 	void test();
 	SolverState BCP();
 	int  analyze(const Clause);
+	int LBD_score_calculation(Clause new_clause); 
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
 	inline void add_unary_clause(Lit l);

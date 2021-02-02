@@ -474,6 +474,7 @@ int Solver::analyze(const Clause conflicting) {
 	else {
 		add_clause(new_clause, watch_lit, new_clause.size() - 1);
 	}
+	// TODO: add call to method calculateLBD
 	
 
 	if (verbose_now()) {	
@@ -488,6 +489,14 @@ int Solver::analyze(const Clause conflicting) {
 		cout << "Learned: "<< num_learned <<" clauses" << endl;		
 	}	
 	return bktrk; 
+}
+
+int Solver::LBD_score_calculation(Clause new_clause) {
+	set<Lit> dist_levels;
+	for (clause_it it = new_clause.cl().begin(); it != new_clause.cl().end(); ++it) {
+		dist_levels.insert(dlevel[*it]);
+	}
+	return dist_levels.size();
 }
 
 /// <summary>
