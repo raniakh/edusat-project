@@ -1,0 +1,58 @@
+{
+  "FileVersion": 2,
+  "Id": "7cbc0538-adf2-4f46-902f-a30703f37191",
+  "Items": [
+    {
+      "Id": "42d6ea1a-59d7-459a-b2b5-86945dff134f",
+      "Command": "-reduceclauses 10000"
+    },
+    {
+      "Id": "03527d20-1a58-4e80-99d6-02fb383273df",
+      "Command": "-v 1"
+    },
+    {
+      "Id": "1bcaec16-8cf2-4d4c-9ca8-ae35c7bca8ff",
+      "Command": "c:\\temp\\velev-pipe-1.1-05.cnf"
+    },
+    {
+      "Id": "7347692b-48fb-459a-a5e9-467530f7667b",
+      "Command": "-timeout  12"
+    },
+    {
+      "Id": "4a2c339a-e2b5-4391-aa40-45de54f9eaa7",
+      "Command": "-h"
+    },
+    {
+      "Id": "9f68eb85-fc47-4e94-89e6-773d12733092",
+      "Command": "-valdh 0"
+    },
+    {
+      "Id": "3b88c408-6b16-48fd-924e-584780dfaff1",
+      "Command": "c:\\temp\\try.cnf"
+    },
+    {
+      "Id": "c31188bd-018d-4493-b9c4-90f0201a9534",
+      "Command": "test\\unsat\\unsat1.cnf"
+    },
+    {
+      "Id": "53d63b67-9ca2-43af-a4a8-58bf2822a363",
+      "Command": "test\\sat\\bmc-ibm-2.cnf"
+    },
+    {
+      "Id": "5a40e05a-85a0-41f2-8a60-0dbddfb14ed8",
+      "Command": "test\\sat\\bmc-ibm-10.cnf"
+    },
+    {
+      "Id": "57cf1298-2a41-4181-93b7-e80aa8412c87",
+      "Command": "test\\sat\\bmc-ibm-12.cnf"
+    },
+    {
+      "Id": "90cfefe9-620b-4f0a-924d-09bab0a3acdb",
+      "Command": "C:\\Users\\Ofer\\source\\repos\\edusat\\edusat\\test\\sat\\bj08amba2g4f3.k10.cnf"
+    },
+    {
+      "Id": "5754cf23-2bb1-4e74-8ecd-ff25bdfa2206",
+      "Command": "> c:\\temp\\out1.txt"
+    }
+  ]
+}
