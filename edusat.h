@@ -259,7 +259,13 @@ class Solver {
 	map<double, unordered_set<Var>, greater<double>> m_Score2Vars; // 'greater' forces an order from large to small of the keys
 	// map - key value, access by keys, key=score, value = list of variables that have this score
 	map<double, unordered_set<Var>, greater<double>>::iterator m_Score2Vars_it;
-	map<clause_t, int> lbd_score_map; // US
+
+	/* our helper data structures*/
+	map<clause_t, int> lbd_score_map; 
+	map<clause_t, double> activity_score_map;
+	map<clause_t, double> score_map;
+	/* end of our helper data structures*/
+
 	unordered_set<Var>::iterator m_VarsSameScore_it;
 	vector<double>	m_activity; // Var => activity
 	double			m_var_inc;	// current increment of var score (it increases over time)
@@ -307,9 +313,11 @@ class Solver {
 	void test();
 	SolverState BCP();
 	int  analyze(const Clause);
-	int LBD_score_calculation(clause_t clause); // US
-	double clause_activity_calculation(clause_t clause); // US
-
+	/* our helper methods */
+	int LBD_score_calculation(clause_t clause); 
+	double clause_activity_calculation(clause_t clause); 
+	double clause_score_calculation(clause_t clause);
+	/*end of our helper methods*/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
 	inline void add_unary_clause(Lit l);

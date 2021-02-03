@@ -474,9 +474,13 @@ int Solver::analyze(const Clause conflicting) {
 	else {
 		add_clause(new_clause, watch_lit, new_clause.size() - 1);
 	}
+
 	int lbd_score = LBD_score_calculation(new_clause.cl());	
 	lbd_score_map.insert(pair<clause_t, int>(new_clause.cl(), lbd_score));
-	
+	double activity_score = clause_activity_calculation(new_clause.cl());
+	activity_score_map.insert(pair<clause_t, double>(new_clause.cl(), activity_score));
+	double score = clause_score_calculation(new_clause.cl());
+	score_map.insert(pair<clause_t, double>(new_clause.cl(), score));
 
 	if (verbose_now()) {	
 		cout << "Learned clause #" << cnf_size() + unaries.size() << ". "; 
@@ -510,7 +514,13 @@ double Solver::clause_activity_calculation(clause_t clause) {
 	return activity;
 }
 
-
+double Solver::clause_score_calculation(clause_t clause) {
+	double score = 0.0;
+	int lbd_score = lbd_score_map[clause];
+	double activity_score = activity_score_map[clause];
+	score = 0.7 * lbd_score + 0.3*activity_score;
+	return score;
+}
 
 /// <summary>
 /// 
