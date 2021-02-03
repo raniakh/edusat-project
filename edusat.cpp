@@ -474,7 +474,7 @@ int Solver::analyze(const Clause conflicting) {
 	else {
 		add_clause(new_clause, watch_lit, new_clause.size() - 1);
 	}
-	int lbd_score = LBD_score_calculation(new_clause);	
+	int lbd_score = LBD_score_calculation(new_clause.cl());	
 	lbd_score_map.insert(pair<clause_t, int>(new_clause.cl(), lbd_score));
 	
 
@@ -492,13 +492,17 @@ int Solver::analyze(const Clause conflicting) {
 	return bktrk; 
 }
 
-int Solver::LBD_score_calculation(Clause new_clause) {
+int Solver::LBD_score_calculation(clause_t clause) {
 	set<Lit> dist_levels;
-	for (clause_it it = new_clause.cl().begin(); it != new_clause.cl().end(); ++it) {
+	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
 		Var v = l2v(*it);
 		dist_levels.insert(dlevel[v]);
 	}
 	return dist_levels.size();
+}
+
+double Solver::clause_activity_calculation(clause_t clause) { // where to call calculate activity ?
+	return 0;
 }
 
 /// <summary>
