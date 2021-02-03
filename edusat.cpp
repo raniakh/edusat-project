@@ -500,10 +500,17 @@ int Solver::LBD_score_calculation(clause_t clause) {
 	}
 	return dist_levels.size();
 }
-
-double Solver::clause_activity_calculation(clause_t clause) { // where to call calculate activity ?
-	return 0;
+/* clause activity = sum of variables activity*/
+double Solver::clause_activity_calculation(clause_t clause) { 
+	double activity = 0.0;
+	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
+		Var v = l2v(*it);
+		activity += m_activity[v];
+	}
+	return activity;
 }
+
+
 
 /// <summary>
 /// 
