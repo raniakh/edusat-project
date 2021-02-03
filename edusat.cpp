@@ -335,7 +335,7 @@ void Solver::test() { // tests that each clause is watched twice.
 		Assert(found);
 	}
 }
-//TODO: increase the score of variables of learnt clauses that were propagated by clauses of LBD 2
+
 SolverState Solver::BCP() {
 	if (verbose_now()) cout << "BCP" << endl;
 	if (verbose_now()) cout << "qhead = " << qhead << " trail-size = " << trail.size() << endl;
@@ -384,6 +384,14 @@ SolverState Solver::BCP() {
 				// CLause = c
 				int new_lbd_score = LBD_score_calculation(c.cl());
 				lbd_score_map[c.cl()] = new_lbd_score;
+				// increase the score of variables of the learnt clauses that were propagated by clauses of LBD 2
+				if (c.size() == 2) { //Glue clause
+					if (verbose_now()) cout << " activity score += 2 " << l2rl(other_watch) << endl;
+					m_Score2Vars[m_activity[l2v(other_watch)]].erase(l2v(other_watch));
+					m_activity[l2v(other_watch)] += 2; // TODO: "2" as initial, fine tune during testing
+					m_Score2Vars[m_activity[l2v(other_watch)]].insert(l2v(other_watch));
+				}
+
 				break;
 			}
 			default: // replacing watch_lit
@@ -394,7 +402,8 @@ SolverState Solver::BCP() {
 			}
 		}
 		// resetting the list of clauses watched by this literal.
-		watches[NegatedLit].clear();
+		watches[NegatedLit].clear(); // TODO FIX BUG: when propagating 48 -> watches[NegatedLit] -> no list, does not watch anyone -> bug !!
+		// why does this happen?
 		new_watch_list_idx++; // just because of the redundant '--' at the end. 		
 		watches[NegatedLit].insert(watches[NegatedLit].begin(), new_watch_list.begin() + new_watch_list_idx, new_watch_list.end());
 
