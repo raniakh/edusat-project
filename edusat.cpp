@@ -335,7 +335,7 @@ void Solver::test() { // tests that each clause is watched twice.
 		Assert(found);
 	}
 }
-
+//TODO: increase the score of variables of learnt clauses that were propagated by clauses of LBD 2
 SolverState Solver::BCP() {
 	if (verbose_now()) cout << "BCP" << endl;
 	if (verbose_now()) cout << "qhead = " << qhead << " trail-size = " << trail.size() << endl;
@@ -380,6 +380,10 @@ SolverState Solver::BCP() {
 				assert_lit(other_watch);
 				antecedent[l2v(other_watch)] = *it;
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
+				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
+				// CLause = c
+				int new_lbd_score = LBD_score_calculation(c.cl());
+				lbd_score_map[c.cl()] = new_lbd_score;
 				break;
 			}
 			default: // replacing watch_lit
