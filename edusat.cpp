@@ -390,6 +390,7 @@ SolverState Solver::BCP() {
 					m_Score2Vars[m_activity[l2v(other_watch)]].erase(l2v(other_watch));
 					m_activity[l2v(other_watch)] += 2; // TODO: "2" as initial, fine tune during testing
 					m_Score2Vars[m_activity[l2v(other_watch)]].insert(l2v(other_watch));
+					// deal with clauses watched by other_watch
 				}
 
 				break;
@@ -531,7 +532,7 @@ double Solver::clause_score_calculation(clause_t clause) {
 	double score = 0.0;
 	int lbd_score = lbd_score_map[clause];
 	double activity_score = activity_score_map[clause];
-	score = 0.7 * lbd_score + 0.3*activity_score;
+	score = 0.7 * lbd_score + 0.3/activity_score; // smaller score -> better clause
 	return score;
 }
 
