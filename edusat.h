@@ -314,6 +314,7 @@ class Solver {
 	SolverState BCP();
 	int  analyze(const Clause);
 	/* our helper methods */
+	bool isAssertingClause(clause_t clause, int conflict_level);
 	void updateLBDscore(clause_t clause);
 	int LBD_score_calculation(clause_t clause); 
 	double clause_activity_calculation(clause_t clause); 

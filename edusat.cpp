@@ -336,6 +336,19 @@ void Solver::test() { // tests that each clause is watched twice.
 	}
 }
 
+/*
+still not sure where to delete clauses. 
+options for now: 
+	1) inside swtich case C_UNSAT
+	2) outside of switch
+possible difficulties:
+	1) affecting watches vector, possibly I need to delete clauses indices that was deleted due to our enhancement from watches vector 
+	2) maintaning cnf vector, Can the deleted clauses be in the middle of the cnf vector? do i need to resize it in order to avoid empty cells? 
+	3) does it affect antecedent vector?
+	4) delete those clauses from lbd_score_map 
+	5) delete those clauses from activity_score_map
+	6) delete those clauses from score_map
+*/
 SolverState Solver::BCP() {
 	if (verbose_now()) cout << "BCP" << endl;
 	if (verbose_now()) cout << "qhead = " << qhead << " trail-size = " << trail.size() << endl;
@@ -417,8 +430,7 @@ SolverState Solver::BCP() {
 			}
 		}
 		// resetting the list of clauses watched by this literal.
-		watches[NegatedLit].clear(); // TODO FIX BUG: when propagating 48 -> watches[NegatedLit] -> no list, does not watch anyone -> bug !!
-		// why does this happen?
+		watches[NegatedLit].clear();
 		new_watch_list_idx++; // just because of the redundant '--' at the end. 		
 		watches[NegatedLit].insert(watches[NegatedLit].begin(), new_watch_list.begin() + new_watch_list_idx, new_watch_list.end());
 
@@ -523,6 +535,21 @@ int Solver::analyze(const Clause conflicting) {
 	}	
 	return bktrk; 
 }
+
+bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
+	int counter_conflict_levels = 0;
+	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
+		Var v = l2v(*it);
+		if (dlevel[v] == conflict_level) {
+			counter_conflict_levels++;
+			if (counter_conflict_levels > 1) {
+				break;
+			}
+		}
+	}
+	return (counter_conflict_levels == 1);
+}
+
 void Solver::updateLBDscore(clause_t clause) {
 	// if this is a learnt clause
 	if (lbd_score_map.find(clause) != lbd_score_map.end()) {
