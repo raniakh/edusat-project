@@ -382,16 +382,31 @@ SolverState Solver::BCP() {
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
 				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
 				updateLBDscore(c.cl());
-				// increase the score of variables of the learnt clauses that were propagated by clauses of LBD 2
-				// FIX THIS 
-				if (c.size() == 2) { //Glue clause, check watches[NegatedLit] before and after this block
-					if (verbose_now()) cout << " activity score += 2 " << l2rl(other_watch) << endl;
-					m_Score2Vars[m_activity[l2v(other_watch)]].erase(l2v(other_watch));
-					m_activity[l2v(other_watch)] += 2; // TODO: "2" as initial, fine tune during testing
-					m_Score2Vars[m_activity[l2v(other_watch)]].insert(l2v(other_watch));
-					// deal with clauses watched by other_watch
+				// increase the score of variables of the learnt clause that were propagated by clauses of LBD 2
+				/*
+				* Summary:
+				* iterate over c variables:
+				*	for each variable:
+				*		if antecedent is a glue clause then increase variable's score
+				*/
+				if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - before for" << endl;
+				for (clause_it it = c.cl().begin(); it != c.cl().end(); ++it) {
+					if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - after for" << endl;
+					Lit lit = *it;
+					Var v = l2v(lit);
+					int ant = antecedent[v];
+					if (verbose_now()) cout << "BCP::propagating:: antecedent[v] = " << ant << endl;
+					if (ant != -1) {
+						Clause antecedent_clause = cnf[ant];
+						if (verbose_now()) cout << "BCP::propagating:: cnf[ant] = " << antecedent_clause.cl().data() << endl;
+						if (antecedent_clause.cl().size() == 2) { // if antecedent is a Glue Clause
+							if (verbose_now()) cout << "activity score += 2 for variable " << v << endl;
+							m_Score2Vars[m_activity[v]].erase(v);
+							m_activity[v] += 2;
+							m_Score2Vars[m_activity[v]].insert(v);
+						}
+					} // if(ant != -1)
 				}
-
 				break;
 			}
 			default: // replacing watch_lit
