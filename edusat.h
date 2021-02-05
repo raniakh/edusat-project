@@ -172,13 +172,13 @@ Var l2v(Lit l) {
 /// <summary>
 /// Neg(l) is a macro that check if l is odd or even
 /// check last bit of number, l & 1 -> right most bit is 1 -> number is odd, rightmost bit is 0 -> number is even
-/// negate(Lit l) :
+/// negate_(Lit l) :
 /// if literal is odd meaning variable is negative then return l+1, 
-/// negate(5)=6, negate(6) = 5
+/// negate(5)=6, negate_(6) = 5
 /// </summary>
 /// <param name="l"></param>
 /// <returns></returns>
-Lit negate(Lit l) {
+Lit negate_(Lit l) {
 	if (Neg(l)) return l + 1;  // odd
 	return l - 1;	
 }
@@ -259,30 +259,39 @@ class Solver {
 	map<double, unordered_set<Var>, greater<double>> m_Score2Vars; // 'greater' forces an order from large to small of the keys
 	// map - key value, access by keys, key=score, value = list of variables that have this score
 	map<double, unordered_set<Var>, greater<double>>::iterator m_Score2Vars_it;
+
+	/* our helper data structures*/
+	map<clause_t, int> lbd_score_map; 
+	map<clause_t, double> activity_score_map;
+	map<clause_t, double> score_map;
+	/* end of our helper data structures*/
+
 	unordered_set<Var>::iterator m_VarsSameScore_it;
 	vector<double>	m_activity; // Var => activity
 	double			m_var_inc;	// current increment of var score (it increases over time)
-	double			m_curr_activity;
-	bool			m_should_reset_iterators;
+	double			m_curr_activity{};
+	bool			m_should_reset_iterators{};
 
 	unsigned int 
 		nvars,			// # vars
 		nclauses, 		// # clauses
-		nlits,			// # literals = 2*nvars				
-		qhead;			// index into trail. Used in BCP() to follow the propagation process.
+		nlits{},			// # literals = 2*nvars
+		qhead,			// index into trail. Used in BCP() to follow the propagation process.
+        conflicts_counter; // number of conflicts that we saw
 	int					
 		num_learned, 	
 		num_decisions,
 		num_assignments,
 		num_restarts,
-		dl,				// decision level
-		max_dl,			// max dl seen so far since the last restart
-		conflicting_clause_idx, // holds the index of the current conflicting clause in cnf[]. -1 if none.				
+		dl{},				// decision level
+		max_dl{},			// max dl seen so far since the last restart
+		conflicting_clause_idx{}, // holds the index of the current conflicting clause in cnf[]. -1 if none.
 		restart_threshold,
 		restart_lower,
 		restart_upper;
 
-	Lit 		asserted_lit; // last literal that got an assignment ( true of false )
+
+	Lit 		asserted_lit{}; // last literal that got an assignment ( true of false )
 
 	float restart_multiplier;
 	
@@ -306,6 +315,14 @@ class Solver {
 	void test();
 	SolverState BCP();
 	int  analyze(const Clause);
+	/* our helper methods */
+	void updateLBDscore(clause_t clause);
+	int LBD_score_calculation(clause_t clause); 
+	double clause_activity_calculation(clause_t clause); 
+	double clause_score_calculation(clause_t clause);
+    bool check_assertance(clause_t clause);
+	void clauses_deletion();
+	/*end of our helper methods*/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
 	inline void add_unary_clause(Lit l);
@@ -321,7 +338,7 @@ class Solver {
 public:
 	Solver(): 
 		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0), 
-		num_restarts(0), m_var_inc(1.0), qhead(0), 
+		num_restarts(0), m_var_inc(1.0), qhead(0), conflicts_counter(0),
 		restart_threshold(Restart_lower), restart_lower(Restart_lower), 
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
 	

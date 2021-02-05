@@ -342,9 +342,9 @@ SolverState Solver::BCP() {
 	// qhead = pointer into trail that points to the last literal that is still not handled 
 	// BCP starts from last decision level from last literal that is still not handled
 	while (qhead < trail.size()) { 
-		Lit NegatedLit = negate(trail[qhead++]); // in trail we save literal itself, in BCP 
+		Lit NegatedLit = negate_(trail[qhead++]); // in trail we save literal itself, in BCP
 		Assert(lit_state(NegatedLit) == LitState::L_UNSAT);
-		if (verbose_now()) cout << "propagating " << l2rl(negate(NegatedLit)) << endl;
+		if (verbose_now()) cout << "propagating " << l2rl(negate_(NegatedLit)) << endl;
 		vector<int> new_watch_list; // The original watch list minus those clauses that changed a watch. The order is maintained. 
 		int new_watch_list_idx = watches[NegatedLit].size() - 1; // Since we are traversing the watch_list backwards, this index goes down.
 		new_watch_list.resize(watches[NegatedLit].size());
@@ -360,7 +360,8 @@ SolverState Solver::BCP() {
 			ClauseState res = c.next_not_false(is_left_watch, other_watch, binary, NewWatchLocation);
 			if (res != ClauseState::C_UNDEF) new_watch_list[new_watch_list_idx--] = *it; //in all cases but the move-watch_lit case we leave watch_lit where it is
 			switch (res) {
-			case ClauseState::C_UNSAT: { // conflict				
+			case ClauseState::C_UNSAT: { // conflict
+                conflicts_counter++;
 				if (verbose_now()) print_state();
 				if (dl == 0) return SolverState::UNSAT;				
 				conflicting_clause_idx = *it;  // this will also break the loop
@@ -380,6 +381,20 @@ SolverState Solver::BCP() {
 				assert_lit(other_watch);
 				antecedent[l2v(other_watch)] = *it;
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
+				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
+				updateLBDscore(c.cl());
+				// increase the score of variables of the learnt clauses that were propagated by clauses of LBD 2
+				// Firstly, each time a learnt clause is  used in unit-propagation (it is a reason of a propagated literal), we compute a new LBD score and update it if necessary.
+                // Secondly, we explicitly increase the score of variables of the learnt clause that were propagated by a glue clause.
+				// FIX THIS 
+				if (c.size() == 2) { //Glue clause, check watches[NegatedLit] before and after this block
+					if (verbose_now()) cout << " activity score += 2 " << l2rl(other_watch) << endl;
+					m_Score2Vars[m_activity[l2v(other_watch)]].erase(l2v(other_watch));
+					m_activity[l2v(other_watch)] += 2; // TODO: "2" as initial, fine tune during testing
+					m_Score2Vars[m_activity[l2v(other_watch)]].insert(l2v(other_watch));
+					// deal with clauses watched by other_watch
+				}
+
 				break;
 			}
 			default: // replacing watch_lit
@@ -390,7 +405,8 @@ SolverState Solver::BCP() {
 			}
 		}
 		// resetting the list of clauses watched by this literal.
-		watches[NegatedLit].clear();
+		watches[NegatedLit].clear(); // TODO FIX BUG: when propagating 48 -> watches[NegatedLit] -> no list, does not watch anyone -> bug !!
+		// why does this happen?
 		new_watch_list_idx++; // just because of the redundant '--' at the end. 		
 		watches[NegatedLit].insert(watches[NegatedLit].begin(), new_watch_list.begin() + new_watch_list_idx, new_watch_list.end());
 
@@ -461,7 +477,7 @@ int Solver::analyze(const Clause conflicting) {
 	}	while (resolve_num > 0);
 	for (clause_it it = new_clause.cl().begin(); it != new_clause.cl().end(); ++it) 
 		marked[l2v(*it)] = false;
-	Lit Negated_u = negate(u);
+	Lit Negated_u = negate_(u);
 	new_clause.cl().push_back(Negated_u);		
 	if (VarDecHeuristic == VAR_DEC_HEURISTIC::MINISAT) 
 		m_var_inc *= 1 / var_decay; // increasing importance of participating variables.
@@ -474,7 +490,13 @@ int Solver::analyze(const Clause conflicting) {
 	else {
 		add_clause(new_clause, watch_lit, new_clause.size() - 1);
 	}
-	
+
+	int lbd_score = LBD_score_calculation(new_clause.cl());	
+	lbd_score_map.insert(pair<clause_t, int>(new_clause.cl(), lbd_score));
+	double activity_score = clause_activity_calculation(new_clause.cl());
+	activity_score_map.insert(pair<clause_t, double>(new_clause.cl(), activity_score));
+	double score = clause_score_calculation(new_clause.cl());
+	score_map.insert(pair<clause_t, double>(new_clause.cl(), score));
 
 	if (verbose_now()) {	
 		cout << "Learned clause #" << cnf_size() + unaries.size() << ". "; 
@@ -489,6 +511,71 @@ int Solver::analyze(const Clause conflicting) {
 	}	
 	return bktrk; 
 }
+void Solver::updateLBDscore(clause_t clause) {
+	// if this is a learnt clause
+	if (lbd_score_map.find(clause) != lbd_score_map.end()) {
+		int new_lbd_score = LBD_score_calculation(clause);
+		lbd_score_map[clause] = new_lbd_score;
+	}	
+}
+
+int Solver::LBD_score_calculation(clause_t clause) {
+	set<Lit> dist_levels;
+	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
+		Var v = l2v(*it);
+		dist_levels.insert(dlevel[v]);
+	}
+	return dist_levels.size();
+}
+/* clause activity = sum of variables activity*/
+double Solver::clause_activity_calculation(clause_t clause) { 
+	double activity = 0.0;
+	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
+		Var v = l2v(*it);
+		activity += m_activity[v];
+	}
+	return activity;
+}
+
+double Solver::clause_score_calculation(clause_t clause) {
+	double score = 0.0;
+	int lbd_score = lbd_score_map[clause];
+	double activity_score = activity_score_map[clause];
+	score = 0.7 * lbd_score + 0.3/activity_score; // smaller score -> better clause
+	return score;
+}
+
+bool Solver::check_assertance(clause_t clause){
+    // checks if clause is asserting
+    return true;
+}
+
+void Solver::clauses_deletion(){
+    // check that we calculated everything right
+    cout << "number of learnt clauses: " << size(lbd_score_map) << endl;
+    cout << "number of learnt clauses: " << num_learned << endl;
+
+    // getting vector of all learned clauses
+    vector<clause_t> learned_clauses;
+    for(auto const& imap: lbd_score_map)
+        learned_clauses.push_back(imap.first);
+
+    vector<clause_t> deletion_candidates;
+    // check that learned clause is asserting
+    for(int i=0; i<learned_clauses.size(); i++){
+        // todo: write check_assertance function
+        // todo: maybe create map with asserting clauses
+        if(check_assertance(learned_clauses[i]) == false){
+            deletion_candidates.push_back(learned_clauses[0]);
+        }
+    }
+
+    // todo: sort deletion candidates
+    // todo: delete candidates with highest (currently) score
+    // omg how easier it would by on python
+}
+
+
 
 /// <summary>
 /// 
