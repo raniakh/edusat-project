@@ -381,11 +381,10 @@ SolverState Solver::BCP() {
 				antecedent[l2v(other_watch)] = *it;
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
 				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
-				// CLause = c
-				int new_lbd_score = LBD_score_calculation(c.cl());
-				lbd_score_map[c.cl()] = new_lbd_score;
+				updateLBDscore(c.cl());
 				// increase the score of variables of the learnt clauses that were propagated by clauses of LBD 2
-				if (c.size() == 2) { //Glue clause
+				// FIX THIS 
+				if (c.size() == 2) { //Glue clause, check watches[NegatedLit] before and after this block
 					if (verbose_now()) cout << " activity score += 2 " << l2rl(other_watch) << endl;
 					m_Score2Vars[m_activity[l2v(other_watch)]].erase(l2v(other_watch));
 					m_activity[l2v(other_watch)] += 2; // TODO: "2" as initial, fine tune during testing
@@ -508,6 +507,13 @@ int Solver::analyze(const Clause conflicting) {
 		cout << "Learned: "<< num_learned <<" clauses" << endl;		
 	}	
 	return bktrk; 
+}
+void Solver::updateLBDscore(clause_t clause) {
+	// if this is a learnt clause
+	if (lbd_score_map.find(clause) != lbd_score_map.end()) {
+		int new_lbd_score = LBD_score_calculation(clause);
+		lbd_score_map[clause] = new_lbd_score;
+	}	
 }
 
 int Solver::LBD_score_calculation(clause_t clause) {
