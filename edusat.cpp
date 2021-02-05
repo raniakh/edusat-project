@@ -341,7 +341,7 @@ SolverState Solver::BCP() {
 	if (verbose_now()) cout << "qhead = " << qhead << " trail-size = " << trail.size() << endl;
 	// qhead = pointer into trail that points to the last literal that is still not handled 
 	// BCP starts from last decision level from last literal that is still not handled
-	while (qhead < trail.size()) { 
+	while (qhead < trail.size()) {
 		Lit NegatedLit = negate_(trail[qhead++]); // in trail we save literal itself, in BCP
 		Assert(lit_state(NegatedLit) == LitState::L_UNSAT);
 		if (verbose_now()) cout << "propagating " << l2rl(negate_(NegatedLit)) << endl;
@@ -361,11 +361,20 @@ SolverState Solver::BCP() {
 			if (res != ClauseState::C_UNDEF) new_watch_list[new_watch_list_idx--] = *it; //in all cases but the move-watch_lit case we leave watch_lit where it is
 			switch (res) {
 			case ClauseState::C_UNSAT: { // conflict
+                if(check_time_for_deletion(conflicts_counter)){
+                    clauses_deletion();
+                }
+                /* our code start */
+                // todo: check that current conflict is an asserting clause
                 conflicts_counter++;
+                cout << "lol" << endl;
+
+                /* our code start */
 				if (verbose_now()) print_state();
+
 				if (dl == 0) return SolverState::UNSAT;				
 				conflicting_clause_idx = *it;  // this will also break the loop
-				 int dist = distance(it, watches[NegatedLit].rend()) - 1; // # of entries in watches[NegatedLit] that were not yet processed when we hit this conflict. 
+				int dist = distance(it, watches[NegatedLit].rend()) - 1; // # of entries in watches[NegatedLit] that were not yet processed when we hit this conflict.
 				// Copying the remaining watched clauses:
 				for (int i = dist - 1; i >= 0; i--) {
 					new_watch_list[new_watch_list_idx--] = watches[NegatedLit][i];
@@ -545,14 +554,28 @@ double Solver::clause_score_calculation(clause_t clause) {
 	return score;
 }
 
-bool Solver::check_assertance(clause_t clause){
+bool Solver::check_conflict_for_assertance(){
     // checks if clause is asserting
+    int maxLevel = -2;
+    for (unsigned int i = 0; i < dlevel.size(); i++) {
+        if (dlevel[i] > maxLevel) {
+            maxLevel = dlevel[i];
+        }
+    }
     return true;
 }
 
+bool Solver::check_time_for_deletion(unsigned int conflicts_counter) {
+    // checks if number of conflicts is 20000 + 500*x
+    if(conflicts_counter == 5) return true;
+//    if(conflicts_counter == 20000 + 500 * deletion_num) return true;
+    return false;
+}
+
+
 void Solver::clauses_deletion(){
     // check that we calculated everything right
-    cout << "number of learnt clauses: " << size(lbd_score_map) << endl;
+    cout << "number of learnt clauses: " << lbd_score_map.size() << endl;
     cout << "number of learnt clauses: " << num_learned << endl;
 
     // getting vector of all learned clauses
@@ -565,14 +588,16 @@ void Solver::clauses_deletion(){
     for(int i=0; i<learned_clauses.size(); i++){
         // todo: write check_assertance function
         // todo: maybe create map with asserting clauses
-        if(check_assertance(learned_clauses[i]) == false){
-            deletion_candidates.push_back(learned_clauses[0]);
-        }
+        // if(!check_assertance(learned_clauses[i])){
+        //     deletion_candidates.push_back(learned_clauses[0]);
+        // }
     }
 
     // todo: sort deletion candidates
     // todo: delete candidates with highest (currently) score
     // omg how easier it would by on python
+
+    deletion_num++;
 }
 
 

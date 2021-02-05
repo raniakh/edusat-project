@@ -3,5 +3,6 @@
 CMakeLists.txt
 
 .directory
-
-
+cmake-build-debug
+cmake-build-debug/
+.vscode

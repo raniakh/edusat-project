@@ -261,9 +261,10 @@ class Solver {
 	map<double, unordered_set<Var>, greater<double>>::iterator m_Score2Vars_it;
 
 	/* our helper data structures*/
-	map<clause_t, int> lbd_score_map; 
+	map<clause_t, int> lbd_score_map;
 	map<clause_t, double> activity_score_map;
 	map<clause_t, double> score_map;
+	vector <clause_t> asserting_clauses;
 	/* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
@@ -277,7 +278,8 @@ class Solver {
 		nclauses, 		// # clauses
 		nlits{},			// # literals = 2*nvars
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
-        conflicts_counter; // number of conflicts that we saw
+        conflicts_counter, // number of conflicts that we saw
+        deletion_num; // number of times we deleted half of the clauses
 	int					
 		num_learned, 	
 		num_decisions,
@@ -320,7 +322,8 @@ class Solver {
 	int LBD_score_calculation(clause_t clause); 
 	double clause_activity_calculation(clause_t clause); 
 	double clause_score_calculation(clause_t clause);
-    bool check_assertance(clause_t clause);
+    bool check_conflict_for_assertance();
+    bool check_time_for_deletion(unsigned conflicts_counter);
 	void clauses_deletion();
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
@@ -336,10 +339,10 @@ class Solver {
 	inline void bumpLitScore(int lit_idx);
 
 public:
-	Solver(): 
-		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0), 
-		num_restarts(0), m_var_inc(1.0), qhead(0), conflicts_counter(0),
-		restart_threshold(Restart_lower), restart_lower(Restart_lower), 
+	Solver():
+		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
+		num_restarts(0), m_var_inc(1.0), qhead(0), conflicts_counter(0), deletion_num(0),
+		restart_threshold(Restart_lower), restart_lower(Restart_lower),
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
 	
 	// service functions
