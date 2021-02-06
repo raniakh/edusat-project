@@ -336,6 +336,57 @@ void Solver::test() { // tests that each clause is watched twice.
 	}
 }
 
+/*
+still not sure where to delete clauses.
+options for now:
+	1) inside  swtich case C_UNSAT
+	2) outside of switch
+    3) outside of the BCP() function, - in function _solve()
+Idea:
+    When we erase half of the learnt clauses:
+        -> antecedent vector now isn't correct.
+        More than that, for part of the clauses we don't even sure that current assignment is correct.
+        Hence maybe it is a good idea to make deletion only after restart?
+        It also can be the case, since we  make restart if the number of conflicts learned in current decision level has passed the threshold.
+        From one point it can be seen as lazy solution, but threshold is actually much smaller than 20000 + 500*x most of the times.
+Another idea:
+    We can make artificial restart when we get to 20000 + 500*x conflicts (not really artificial, but it's like general threshold for algorithm run)
+possible difficulties:
+	1) affecting watches vector, possibly I need to delete clauses indices that was deleted due to our enhancement from watches vector
+	2) maintaning cnf vector, Can the deleted clauses be in the middle of the cnf vector? do i need to resize it in order to avoid empty cells?
+	3) does it affect antecedent vector?
+	4) delete those clauses from lbd_score_map
+	5) delete those clauses from activity_score_map
+	6) delete those clauses from score_map
+
+Solution based on my ideas:
+Done    0) We have vector deletion_candidates = learnt clauses - asserting clauses
+Done       We store them as map {index in cnf : clause_t} (var name: deletion_candidates)
+        When we get to 20000 + 500*x conflicts we:
+Done    1) let algorithm finish BCP function.
+Done    2) in backtrack function we introduce the concept of a global restart (var name: GLOBAL_RESTART_FLAG)
+            (which does the same as local restart, but on another condition)
+        3) After restart we need to clean antecedent and watches vectors (in function clauses_deletion() )
+            3.1) We sort deletion_candidates by score (sort_by_score function) and get list of clauses indices that we gonna delete from cnf
+            3.2) We have to create a new map that recalculates indices of clauses.
+                 For example if we have 4 clauses and delete third one, map will be:
+                 index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
+            3.3) in antecedents for each variable we change all indices by index_recalculation_map
+            3.4) in watchers:
+                for lit in watchers.size():
+                    for clause_num in watchers[lit]:
+                        if(index_recalculation_map[watchers[lit][clause_num]]=-1):
+                            watchers[lit].pop(clause_num)
+                        else:
+                            watchers[lit][clause_num] = index_recalculation_map[clause_num]
+        4) Finally after there are no references on clauses that gonna be deleted we erase them:
+            4.1) from cnf
+            4.2) from lbd_score_map
+            4.3) activity_score_map
+            4.3) score_map
+            4.3) change number of learnt clauses
+
+*/
 SolverState Solver::BCP() {
 	if (verbose_now()) cout << "BCP" << endl;
 	if (verbose_now()) cout << "qhead = " << qhead << " trail-size = " << trail.size() << endl;
@@ -361,15 +412,15 @@ SolverState Solver::BCP() {
 			if (res != ClauseState::C_UNDEF) new_watch_list[new_watch_list_idx--] = *it; //in all cases but the move-watch_lit case we leave watch_lit where it is
 			switch (res) {
 			case ClauseState::C_UNSAT: { // conflict
-                if(check_time_for_deletion(conflicts_counter)){
-                    clauses_deletion();
-                }
-                /* our code start */
-                // todo: check that current conflict is an asserting clause
-                conflicts_counter++;
-                cout << "lol" << endl;
 
-                /* our code start */
+                conflicts_counter++;
+
+                // if current clause isn't asserting, it can be deleted,
+                // hence we add it to deletion candidates
+                if(!isAssertingClause(c.cl(), dl)){
+                    deletion_candidates.insert({*it, c.cl()});
+                }
+
 				if (verbose_now()) print_state();
 
 				if (dl == 0) return SolverState::UNSAT;				
@@ -380,7 +431,7 @@ SolverState Solver::BCP() {
 					new_watch_list[new_watch_list_idx--] = watches[NegatedLit][i];
 				}
 				if (verbose_now()) cout << "conflict" << endl;
-				break;
+                break;
 			}
 			case ClauseState::C_SAT: 
 				if (verbose_now()) cout << "clause is sat" << endl;
@@ -414,8 +465,7 @@ SolverState Solver::BCP() {
 			}
 		}
 		// resetting the list of clauses watched by this literal.
-		watches[NegatedLit].clear(); // TODO FIX BUG: when propagating 48 -> watches[NegatedLit] -> no list, does not watch anyone -> bug !!
-		// why does this happen?
+		watches[NegatedLit].clear();
 		new_watch_list_idx++; // just because of the redundant '--' at the end. 		
 		watches[NegatedLit].insert(watches[NegatedLit].begin(), new_watch_list.begin() + new_watch_list_idx, new_watch_list.end());
 
@@ -520,6 +570,21 @@ int Solver::analyze(const Clause conflicting) {
 	}	
 	return bktrk; 
 }
+
+bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
+    int counter_conflict_levels = 0;
+    for (clause_it it = clause.begin(); it != clause.end(); ++it) {
+        Var v = l2v(*it);
+        if (dlevel[v] == conflict_level) {
+            counter_conflict_levels++;
+            if (counter_conflict_levels > 1) {
+                break;
+            }
+        }
+    }
+    return (counter_conflict_levels == 1);
+}
+
 void Solver::updateLBDscore(clause_t clause) {
 	// if this is a learnt clause
 	if (lbd_score_map.find(clause) != lbd_score_map.end()) {
@@ -554,49 +619,17 @@ double Solver::clause_score_calculation(clause_t clause) {
 	return score;
 }
 
-bool Solver::check_conflict_for_assertance(){
-    // checks if clause is asserting
-    int maxLevel = -2;
-    for (unsigned int i = 0; i < dlevel.size(); i++) {
-        if (dlevel[i] > maxLevel) {
-            maxLevel = dlevel[i];
-        }
-    }
+bool Solver::sort_by_score(map<int, clause_t> clause1, map<int, clause_t> clause2){
+//    return  clause_score_calculation(clause1)>clause_score_calculation(clause2);
     return true;
 }
 
-bool Solver::check_time_for_deletion(unsigned int conflicts_counter) {
-    // checks if number of conflicts is 20000 + 500*x
-    if(conflicts_counter == 5) return true;
-//    if(conflicts_counter == 20000 + 500 * deletion_num) return true;
-    return false;
-}
-
-
 void Solver::clauses_deletion(){
-    // check that we calculated everything right
     cout << "number of learnt clauses: " << lbd_score_map.size() << endl;
-    cout << "number of learnt clauses: " << num_learned << endl;
+    cout << "number of not asserting learnt clauses: " << deletion_candidates.size() << endl;
 
-    // getting vector of all learned clauses
-    vector<clause_t> learned_clauses;
-    for(auto const& imap: lbd_score_map)
-        learned_clauses.push_back(imap.first);
-
-    vector<clause_t> deletion_candidates;
-    // check that learned clause is asserting
-    for(int i=0; i<learned_clauses.size(); i++){
-        // todo: write check_assertance function
-        // todo: maybe create map with asserting clauses
-        // if(!check_assertance(learned_clauses[i])){
-        //     deletion_candidates.push_back(learned_clauses[0]);
-        // }
-    }
-
-    // todo: sort deletion candidates
-    // todo: delete candidates with highest (currently) score
-    // omg how easier it would by on python
-
+    // todo: sort deletion_candidates
+//    sort(deletion_candidates.begin(), deletion_candidates.end(), sort_by_score);
     deletion_num++;
 }
 
@@ -608,13 +641,21 @@ void Solver::clauses_deletion(){
 /// <param name="k"></param>
 void Solver::backtrack(int k) {
 	if (verbose_now()) cout << "backtrack" << endl;
-	// local restart means that we restart if the number of conflicts learned in this 
-	// decision level has passed the threshold. 
+    // global restart means that we restart if the number of conflicts during
+    // whole run of the algorithm has passed the global threshold.
+    if (conflicts_counter > 20000 + 500 * deletion_num) {	// "global restart"
+        GLOBAL_RESTART_FLAG = true;
+        restart();
+        return;
+    }
+    // local restart means that we restart if the number of conflicts learned in this
+    // decision level has passed the threshold.
 	if (k > 0 && (num_learned - conflicts_at_dl[k] > restart_threshold)) {	// "local restart"	
 		         // learned clauses - number of learned clauses at decision level k = effort done in this subtree
 		restart(); 		
 		return;
 	}
+
 	// restart: erase the trail from level 1 and up. as if we are restarting solver all over again
 	// but we are not actually restarting solver all over again because we still have everything that we learnt and all the scores
 	// basically it is to backtrack to level 1
@@ -699,7 +740,7 @@ void Solver::restart() {
 /// calls _solve() and deals with _solve() result
 /// </summary>
 void Solver::solve() { 
-	SolverState res = _solve(); 	
+	SolverState res = _solve();
 	Assert(res == SolverState::SAT || res == SolverState::UNSAT || res == SolverState::TIMEOUT);
 	S.print_stats();
 	switch (res) {
@@ -730,6 +771,12 @@ SolverState Solver::_solve() {
 	while (true) {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
+		    /* place for clauses deletion */
+            if(GLOBAL_RESTART_FLAG){
+                clauses_deletion();
+                GLOBAL_RESTART_FLAG = false;
+            }
+            /* place for clauses deletion */
 			res = BCP();
 			if (res == SolverState::UNSAT) return res; // conflict at decision level = 0
 			if (res == SolverState::CONFLICT)
@@ -749,13 +796,13 @@ SolverState Solver::_solve() {
 int main(int argc, char** argv){
 	begin_time = cpuTime();
 	parse_options(argc, argv);
-	
+
 	ifstream in (argv[argc - 1]);
-	if (!in.good()) Abort("cannot read input file", 1);	
+	if (!in.good()) Abort("cannot read input file", 1);
 	cout << "This is edusat" << endl;
-	S.read_cnf(in);	// read cnf from input file	
+	S.read_cnf(in);	// read cnf from input file
 	in.close();
-	S.solve();	
+	S.solve();
 
 	return 0;
 }

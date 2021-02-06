@@ -264,7 +264,7 @@ class Solver {
 	map<clause_t, int> lbd_score_map;
 	map<clause_t, double> activity_score_map;
 	map<clause_t, double> score_map;
-	vector <clause_t> asserting_clauses;
+    map<int, clause_t> deletion_candidates; // learnt clauses indices, that are NOT asserting
 	/* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
@@ -272,8 +272,9 @@ class Solver {
 	double			m_var_inc;	// current increment of var score (it increases over time)
 	double			m_curr_activity{};
 	bool			m_should_reset_iterators{};
+	bool GLOBAL_RESTART_FLAG;   // false by default. true, when we performed global restart and need to delete half of the clauses
 
-	unsigned int 
+	unsigned int
 		nvars,			// # vars
 		nclauses, 		// # clauses
 		nlits{},			// # literals = 2*nvars
@@ -318,12 +319,12 @@ class Solver {
 	SolverState BCP();
 	int  analyze(const Clause);
 	/* our helper methods */
+    bool isAssertingClause(clause_t clause, int conflict_level);
 	void updateLBDscore(clause_t clause);
 	int LBD_score_calculation(clause_t clause); 
 	double clause_activity_calculation(clause_t clause); 
 	double clause_score_calculation(clause_t clause);
-    bool check_conflict_for_assertance();
-    bool check_time_for_deletion(unsigned conflicts_counter);
+	bool sort_by_score(map<int, clause_t> clause1, map<int, clause_t> clause2);
 	void clauses_deletion();
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
@@ -341,7 +342,10 @@ class Solver {
 public:
 	Solver():
 		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
-		num_restarts(0), m_var_inc(1.0), qhead(0), conflicts_counter(0), deletion_num(0),
+		num_restarts(0), m_var_inc(1.0), qhead(0),
+		/* our helping variables */
+		conflicts_counter(0), deletion_num(0), GLOBAL_RESTART_FLAG(false),
+		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower),
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
 	
