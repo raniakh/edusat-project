@@ -614,7 +614,22 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 }
 
 void Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
-	return;
+	int clause_index, score;
+	int size = vec.size();
+	int mid = size / 2;
+
+	for (int i = mid; i < size; i++) {
+		clause_index = vec[i].first;
+		score = vec[i].second;
+		if (!isAssertingClause(cnf[clause_index].cl(), dl)) {
+			lbd_score_map.erase(cnf[clause_index].cl());
+			activity_score_map.erase(cnf[clause_index].cl());
+			score_map.erase(cnf[clause_index].cl());
+			//TODO: add fucntion remove from watches
+			//TODO: add function to mark antecedent[var]=-1 is antecendant is deleted clause
+			cnf.erase(cnf.begin() + clause_index); // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/	
+		}
+	}
 }
 
 /// <summary>
@@ -641,9 +656,10 @@ void Solver::backtrack(int k) {
 	static int counter = 0;
 
 	/*
-	* sort conflict clauses by score (lbd+activity)
-	* remove half without asserting clauses.
-	* when to deal with asserting? asserting now might not be asserting later.
+	* sort conflict clauses by score (lbd+activity) -> sort_conflict_clauses_by_score() - done
+	* find new k if smaller level of antecedant smaller than current k.
+	* remove half without asserting clauses. -> deleteHalfLeanrtClauses(vector<pair<int, double>> vec) - doing
+	* 
 	*/
 		
 	for (trail_t::iterator it = trail.begin() + separators[k+1]; it != trail.end(); ++it) { // erasing from k+1
