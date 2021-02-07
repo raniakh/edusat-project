@@ -677,7 +677,7 @@ void Solver::backtrack(int k) {
 	/*
 	* sort conflict clauses by score (lbd+activity) -> sort_conflict_clauses_by_score() - done
 	* find new k if smaller level of antecedant smaller than current k.
-	* remove half without asserting clauses. -> deleteHalfLeanrtClauses(vector<pair<int, double>> vec) - doing
+	* remove half without asserting clauses. -> deleteHalfLeanrtClauses(vector<pair<int, double>> vec) - done
 	* 
 	*/
 		
