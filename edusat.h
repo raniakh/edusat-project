@@ -259,42 +259,42 @@ class Solver {
 	map<double, unordered_set<Var>, greater<double>> m_Score2Vars; // 'greater' forces an order from large to small of the keys
 	// map - key value, access by keys, key=score, value = list of variables that have this score
 	map<double, unordered_set<Var>, greater<double>>::iterator m_Score2Vars_it;
-
 	/* our helper data structures*/
 	map<clause_t, int> lbd_score_map;
 	map<clause_t, double> activity_score_map;
 	map<clause_t, double> score_map;
     map<int, clause_t> deletion_candidates; // learnt clauses indices, that are NOT asserting
-	/* end of our helper data structures*/
+    map<int, double> clauseIndx_score_map;
+    map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => var => For variables that their value was assigned in BCP, this is the clause that gave this variable its value.
+    /* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
 	vector<double>	m_activity; // Var => activity
 	double			m_var_inc;	// current increment of var score (it increases over time)
-	double			m_curr_activity{};
-	bool			m_should_reset_iterators{};
-	bool GLOBAL_RESTART_FLAG;   // false by default. true, when we performed global restart and need to delete half of the clauses
+	double			m_curr_activity;
+	bool			m_should_reset_iterators;
+	bool DYNAMIC_RESTART_FLAG;   // false by default. true, when we performed dynamic restart and need to delete half of the clauses
 
 	unsigned int
 		nvars,			// # vars
 		nclauses, 		// # clauses
-		nlits{},			// # literals = 2*nvars
+		nlits,			// # literals = 2*nvars
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
-        conflicts_counter, // number of conflicts that we saw
+		conflicts_counter, // number of conflicts that we saw
         deletion_num; // number of times we deleted half of the clauses
 	int					
 		num_learned, 	
 		num_decisions,
 		num_assignments,
 		num_restarts,
-		dl{},				// decision level
-		max_dl{},			// max dl seen so far since the last restart
-		conflicting_clause_idx{}, // holds the index of the current conflicting clause in cnf[]. -1 if none.
+		dl,				// decision level
+		max_dl,			// max dl seen so far since the last restart
+		conflicting_clause_idx, // holds the index of the current conflicting clause in cnf[]. -1 if none.
 		restart_threshold,
 		restart_lower,
 		restart_upper;
 
-
-	Lit 		asserted_lit{}; // last literal that got an assignment ( true of false )
+	Lit 		asserted_lit; // last literal that got an assignment ( true of false )
 
 	float restart_multiplier;
 	
@@ -319,13 +319,19 @@ class Solver {
 	SolverState BCP();
 	int  analyze(const Clause);
 	/* our helper methods */
-    bool isAssertingClause(clause_t clause, int conflict_level);
+	void increaseVariableActivityScore(Var v);
+	bool isAssertingClause(clause_t clause, int conflict_level);
 	void updateLBDscore(clause_t clause);
 	int LBD_score_calculation(clause_t clause); 
 	double clause_activity_calculation(clause_t clause); 
 	double clause_score_calculation(clause_t clause);
-	bool sort_by_score(map<int, clause_t> clause1, map<int, clause_t> clause2);
-	void clauses_deletion();
+    vector<pair<int, double>> sort_conflict_clauses_by_score();
+    void deleteLearntClauseFromWatches(int indexToDelete);
+    void unmarkAntecedentForVariable(int clause_index);
+    vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
+
+    int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
+
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
@@ -341,13 +347,13 @@ class Solver {
 
 public:
 	Solver():
-		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
-		num_restarts(0), m_var_inc(1.0), qhead(0),
+            nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
+            num_restarts(0), m_var_inc(1.0), qhead(0),
 		/* our helping variables */
-		conflicts_counter(0), deletion_num(0), GLOBAL_RESTART_FLAG(false),
+		conflicts_counter(0), deletion_num(0), DYNAMIC_RESTART_FLAG(false),
 		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower),
-		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
+            restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
 	
 	// service functions
 	inline LitState lit_state(Lit l) {
