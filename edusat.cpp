@@ -433,7 +433,10 @@ SolverState Solver::BCP() {
 		watches[NegatedLit].insert(watches[NegatedLit].begin(), new_watch_list.begin() + new_watch_list_idx, new_watch_list.end());
 
 		//print_watches();
-		if (conflicting_clause_idx >= 0) return SolverState::CONFLICT;
+		if (conflicting_clause_idx >= 0) {
+			conflicts_counter++;
+			return SolverState::CONFLICT; 
+		}
 		new_watch_list.clear();
 	}
 	return SolverState::UNDEF;
@@ -513,12 +516,14 @@ int Solver::analyze(const Clause conflicting) {
 		add_clause(new_clause, watch_lit, new_clause.size() - 1);
 	}
 
+	int idx = cnf.size() - 1; // according to add_clause, new clause is added to the end of cnf. 
 	int lbd_score = LBD_score_calculation(new_clause.cl());	
 	lbd_score_map.insert(pair<clause_t, int>(new_clause.cl(), lbd_score));
 	double activity_score = clause_activity_calculation(new_clause.cl());
 	activity_score_map.insert(pair<clause_t, double>(new_clause.cl(), activity_score));
 	double score = clause_score_calculation(new_clause.cl());
 	score_map.insert(pair<clause_t, double>(new_clause.cl(), score));
+	clauseIndx_score_map.insert(pair<int, double>(idx, score));
 
 	if (verbose_now()) {	
 		cout << "Learned clause #" << cnf_size() + unaries.size() << ". "; 
@@ -588,6 +593,30 @@ double Solver::clause_score_calculation(clause_t clause) {
 	return score;
 }
 
+bool cmp(pair<int,double> &a, pair<int,double> &b) {
+	return a.second < b.second;
+}
+
+vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
+	vector<pair<int, double>> sorted_vec;
+
+	//copy key-value pair from clauseIndx_score_map to vector
+	map<int, double>::iterator it;
+	for (it = clauseIndx_score_map.begin(); it != clauseIndx_score_map.end(); it++) {
+		sorted_vec.push_back(make_pair(it->first, it->second));
+	}
+	// in c++ you can't sort map by value, must copy to vector of pairs
+	// sort using comparator funcion
+	sort(sorted_vec.begin(), sorted_vec.end(), cmp);
+	//in c++, map keys can't be ordered by insertion order
+	return sorted_vec;
+
+}
+
+void Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
+	return;
+}
+
 /// <summary>
 /// 
 /// </summary>
@@ -610,6 +639,12 @@ void Solver::backtrack(int k) {
 	// if there is a lot of work we restart because chances are there is no solution in this way.
 
 	static int counter = 0;
+
+	/*
+	* sort conflict clauses by score (lbd+activity)
+	* remove half without asserting clauses.
+	* when to deal with asserting? asserting now might not be asserting later.
+	*/
 		
 	for (trail_t::iterator it = trail.begin() + separators[k+1]; it != trail.end(); ++it) { // erasing from k+1
 		// separators[k+1] -> index into trail , trail.begin() + separators[k+1]-> place in trail where decision level k+1 starts

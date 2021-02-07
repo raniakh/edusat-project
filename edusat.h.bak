@@ -259,11 +259,11 @@ class Solver {
 	map<double, unordered_set<Var>, greater<double>> m_Score2Vars; // 'greater' forces an order from large to small of the keys
 	// map - key value, access by keys, key=score, value = list of variables that have this score
 	map<double, unordered_set<Var>, greater<double>>::iterator m_Score2Vars_it;
+
 	/* our helper data structures*/
 	map<clause_t, int> lbd_score_map;
 	map<clause_t, double> activity_score_map;
 	map<clause_t, double> score_map;
-	map<int, double> clauseIndx_score_map;
 	/* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
@@ -277,8 +277,8 @@ class Solver {
 		nclauses, 		// # clauses
 		nlits,			// # literals = 2*nvars				
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
-		conflicts_counter, // number of conflicts that we saw
-        deletion_num; // number of times we deleted half of the clauses
+		conflicts_counter,
+		deletion_num;
 	int					
 		num_learned, 	
 		num_decisions,
@@ -322,8 +322,6 @@ class Solver {
 	int LBD_score_calculation(clause_t clause); 
 	double clause_activity_calculation(clause_t clause); 
 	double clause_score_calculation(clause_t clause);
-	vector<pair<int, double>> sort_conflict_clauses_by_score();
-	void deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
@@ -341,9 +339,6 @@ public:
 	Solver(): 
 		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0), 
 		num_restarts(0), m_var_inc(1.0), qhead(0), 
-		/* our helping variables */
-		conflicts_counter(0), deletion_num(0),
-		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower), 
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
 	
