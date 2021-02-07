@@ -413,10 +413,8 @@ SolverState Solver::BCP() {
 						Clause antecedent_clause = cnf[ant];
 						if (verbose_now()) cout << "BCP::propagating:: cnf[ant] = " << antecedent_clause.cl().data() << endl;
 						if (antecedent_clause.cl().size() == 2) { // if antecedent is a Glue Clause
-							if (verbose_now()) cout << "activity score += 2 for variable " << v << endl;
-							m_Score2Vars[m_activity[v]].erase(v);
-							m_activity[v] += 2;
-							m_Score2Vars[m_activity[v]].insert(v);
+							if (verbose_now()) cout << "activity score += 2 for variable " << v << endl;	
+							increaseVariableActivityScore(v);
 						}
 					} // if(ant != -1)
 				}
@@ -534,6 +532,12 @@ int Solver::analyze(const Clause conflicting) {
 		cout << "Learned: "<< num_learned <<" clauses" << endl;		
 	}	
 	return bktrk; 
+}
+
+void Solver::increaseVariableActivityScore(Var v) {
+	m_Score2Vars[m_activity[v]].erase(v);
+	m_activity[v] += 100;
+	m_Score2Vars[m_activity[v]].insert(v);
 }
 
 bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {

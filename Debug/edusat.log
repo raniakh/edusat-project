@@ -1,2 +1,3 @@
 ﻿  edusat.cpp
+edusat.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
   edusat.vcxproj -> C:\Users\rania\source\repos\edusat\Debug\edusat.exe
