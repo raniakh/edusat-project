@@ -613,6 +613,17 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 
 }
 
+void deleteLearntClauseFromWatches(int indexToDelete, vector<vector<int>>& watchesvec) {
+	//vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
+	vector<vector<int>>::iterator row;
+	vector<int>::iterator col;
+	for (row = watchesvec.begin(); row != watchesvec.end(); row++) {
+		if (find(row->begin(), row->end(), indexToDelete) != row->end()) {
+			row->erase(remove(row->begin(), row->end(), indexToDelete));
+		}
+	}
+}
+
 void Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 	int clause_index, score;
 	int size = vec.size();
@@ -625,7 +636,7 @@ void Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 			lbd_score_map.erase(cnf[clause_index].cl());
 			activity_score_map.erase(cnf[clause_index].cl());
 			score_map.erase(cnf[clause_index].cl());
-			//TODO: add fucntion remove from watches
+			deleteLearntClauseFromWatches(clause_index, watches);
 			//TODO: add function to mark antecedent[var]=-1 is antecendant is deleted clause
 			cnf.erase(cnf.begin() + clause_index); // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/	
 		}
