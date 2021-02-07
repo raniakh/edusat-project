@@ -273,15 +273,14 @@ class Solver {
 	double			m_var_inc;	// current increment of var score (it increases over time)
 	double			m_curr_activity;
 	bool			m_should_reset_iterators;
-	bool DYNAMIC_RESTART_FLAG;   // false by default. true, when we performed dynamic restart and need to delete half of the clauses
 
 	unsigned int
 		nvars,			// # vars
 		nclauses, 		// # clauses
 		nlits,			// # literals = 2*nvars
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
-		conflicts_counter, // number of conflicts that we saw
-        deletion_num; // number of times we deleted half of the clauses
+		num_conflicts, // number of conflicts that we saw
+        num_deletion; // number of times we deleted half of the clauses
 	int					
 		num_learned, 	
 		num_decisions,
@@ -350,7 +349,7 @@ public:
             nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
             num_restarts(0), m_var_inc(1.0), qhead(0),
 		/* our helping variables */
-		conflicts_counter(0), deletion_num(0), DYNAMIC_RESTART_FLAG(false),
+		num_conflicts(0), num_deletion(0),
 		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower),
             restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
@@ -416,12 +415,14 @@ public:
 	};
 
 
-	void print_stats() {cout << endl << "Statistics: " << endl << "===================" << endl << 
-		"### Restarts:\t\t" << num_restarts << endl <<
-		"### Learned-clauses:\t" << num_learned << endl <<
-		"### Decisions:\t\t" << num_decisions << endl <<
-		"### Implications:\t" << num_assignments - num_decisions << endl <<
-		"### Time:\t\t" << cpuTime() - begin_time << endl;
+	void print_stats() {cout << endl << "Statistics: " << endl << "===================" << endl <<
+        "### Restarts:\t\t" << num_restarts << endl <<
+        "### Dynamic restarts:\t\t" << num_deletion << endl <<
+        "### Conflicts:\t\t" << num_conflicts << endl <<
+        "### Learned-clauses:\t" << num_learned << endl <<
+        "### Decisions:\t\t" << num_decisions << endl <<
+        "### Implications:\t" << num_assignments - num_decisions << endl <<
+        "### Time:\t\t" << cpuTime() - begin_time << endl;
 	}
 	
 	void validate_assignment();

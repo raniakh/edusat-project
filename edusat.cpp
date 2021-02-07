@@ -477,7 +477,7 @@ SolverState Solver::BCP() {
 
 		//print_watches();
 		if (conflicting_clause_idx >= 0) {
-			conflicts_counter++;
+			num_conflicts++;
 			return SolverState::CONFLICT;
 		}
 		new_watch_list.clear();
@@ -723,13 +723,6 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 /// <param name="k"></param>
 void Solver::backtrack(int k) {
 	if (verbose_now()) cout << "backtrack" << endl;
-    // global restart means that we restart if the number of conflicts during
-    // whole run of the algorithm has passed the global threshold.
-//    if (conflicts_counter > 20000 + 500 * deletion_num) {	// "global restart"
-//        DYNAMIC_RESTART_FLAG = true;
-//        restart();
-//        return;
-//    }
     // local restart means that we restart if the number of conflicts learned in this
     // decision level has passed the threshold.
 	if (k > 0 && (num_learned - conflicts_at_dl[k] > restart_threshold)) {	// "local restart"	
@@ -755,6 +748,10 @@ void Solver::backtrack(int k) {
 	* remove half without asserting clauses. -> deleteHalfLeanrtClauses(vector<pair<int, double>> vec) - doing
 	*
 	*/
+
+    // global restart means that we restart if the number of conflicts during
+    // whole run of the algorithm has passed the global threshold.
+
 
 	for (trail_t::iterator it = trail.begin() + separators[k+1]; it != trail.end(); ++it) { // erasing from k+1
 		// separators[k+1] -> index into trail , trail.begin() + separators[k+1]-> place in trail where decision level k+1 starts
@@ -865,13 +862,12 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if(DYNAMIC_RESTART_FLAG){
+            if (num_conflicts > 1000 + 500 * num_deletion) {	// "dynamic restart"
                 vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
                 vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);
+                num_deletion++;
                 int dr_bktrc = get_dynamic_restart_backtracking_level(deleted_clauses);
                 backtrack(dr_bktrc);
-
-                DYNAMIC_RESTART_FLAG = false;
             }
             /* place for clauses deletion */
 			res = BCP();
