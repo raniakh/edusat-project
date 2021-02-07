@@ -369,7 +369,8 @@ Done    2) in backtrack function we introduce the concept of a global restart (v
         3) After restart we need to clean antecedent and watches vectors (in function clauses_deletion() )
             3.1) We sort deletion_candidates by score (sort_by_score function) and get list of clauses indices that we gonna delete from cnf
             3.2) We have to create a new map that recalculates indices of clauses.
-                 For example if we have 4 clauses and delete third one, map will be:
+                 For example if we had 4 clauses and deleted the third one, map will be:
+                 {old_idx : new_idx}
                  index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
             3.3) in antecedents for each variable we change all indices by index_recalculation_map
             3.4) in watchers:
@@ -674,23 +675,26 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
     return min_level;
 }
 
-void Solver::deleteLearntClauseFromWatches(int indexToDelete) {
+void Solver::deleteLearntClauseFromWatches(int clause_index, int recalculated_index) {
     //vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
     vector<vector<int>>::iterator row;
     //vector<int>::iterator col;
-    for (row = watches.begin(); row != watches.end(); row++) {
-        if (find(row->begin(), row->end(), indexToDelete) != row->end()) {
-            row->erase(remove(row->begin(), row->end(), indexToDelete));
+    for (int i = 0; i< watches.size(); i++) {
+        if (find(watches[i].begin(), watches[i].end(), clause_index) != watches[i].end()) {
+            watches[i].erase(remove(watches[i].begin(), watches[i].end(), clause_index));
+            if (recalculated_index != -1) {
+                watches[i].push_back(recalculated_index);
+            }
         }
     }
 }
 
-void Solver::unmarkAntecedentForVariable(int clause_index) {
+void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_index) {
     // vector<int> antecedent; // var => clause index
     if(reversed_antecedent.find(clause_index)!=reversed_antecedent.end()){
         vector<Var> vars = reversed_antecedent[clause_index];
         for(int j=0; j<vars.size(); j++){
-            antecedent[vars[j]] = -1;
+            antecedent[vars[j]] = recalculated_index;
         }
     }
 }
@@ -699,22 +703,55 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
     int clause_index, score;
     int size = vec.size();
     int mid = size / 2;
-    vector <int> deleted_clauses;
-
-    for (int i = mid; i < size; i++) {
+    vector <int> clauses_to_delete;
+    int amount_to_delete = size/2;
+    int counter_removed=0;
+    map <int, int> index_recalculation_map;
+    // index_recalculation_map construction
+    for(int i=size-1;i>0;i--){
+        //        {old_idx : new_idx}
+        //        index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
         clause_index = vec[i].first;
         score = vec[i].second;
-        if (!isAssertingClause(cnf[clause_index].cl(), dl)) {
+        if (!isAssertingClause(cnf[clause_index].cl(), dl) && counter_removed<amount_to_delete) {
+            counter_removed++;
+            clauses_to_delete.push_back(clause_index); // not delete yet
+            index_recalculation_map.insert(pair<int,int> (clause_index, -1));
+        }
+        else{
+            index_recalculation_map.insert(pair<int,int> (clause_index, clause_index));
+        }
+        // 1, 2 ,delete 3 ,4 , 5 , delete 6, 7
+        //counter_removed = 2
+        // 1, 2 , -1, 3, 4, -1, 7-2=5
+    }
+    // now we need to change all not deleted clauses
+    int minus = 0;
+    for(int i=0; i<vec.size(); i++){
+        if(index_recalculation_map[i]==-1){
+            minus ++;
+        }
+        else{
+            index_recalculation_map[i] -= minus;
+        }
+    }
+
+    for(int i=0;i<vec.size();i++){
+        clause_index = vec[i].first;
+        score = vec[i].second;
+        int recalculated_index = index_recalculation_map[clause_index];
+        if(recalculated_index==-1){
             lbd_score_map.erase(cnf[clause_index].cl());
             activity_score_map.erase(cnf[clause_index].cl());
             score_map.erase(cnf[clause_index].cl());
-            deleteLearntClauseFromWatches(clause_index);
-            unmarkAntecedentForVariable(clause_index);
             cnf.erase(cnf.begin() + clause_index); // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
-            deleted_clauses.push_back(clause_index);
-        }
+            }
+        deleteLearntClauseFromWatches(clause_index, recalculated_index);
+        unmarkAntecedentForVariable(clause_index, recalculated_index);
     }
-    return deleted_clauses;
+    // todo: write destructor for index_recalculation_map
+
+    return clauses_to_delete;
 }
 
 /// <summary>
@@ -862,7 +899,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if (num_conflicts > 1000 + 500 * num_deletion) {	// "dynamic restart"
+            if (num_conflicts > 3 + 4 * num_deletion) {	// "dynamic restart"
                 vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
                 vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);
                 num_deletion++;
