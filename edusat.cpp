@@ -610,16 +610,24 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 	sort(sorted_vec.begin(), sorted_vec.end(), cmp);
 	//in c++, map keys can't be ordered by insertion order
 	return sorted_vec;
-
 }
 
-void deleteLearntClauseFromWatches(int indexToDelete, vector<vector<int>>& watchesvec) {
+void Solver::deleteLearntClauseFromWatches(int indexToDelete) {
 	//vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
 	vector<vector<int>>::iterator row;
-	vector<int>::iterator col;
-	for (row = watchesvec.begin(); row != watchesvec.end(); row++) {
+	//vector<int>::iterator col;
+	for (row = watches.begin(); row != watches.end(); row++) {
 		if (find(row->begin(), row->end(), indexToDelete) != row->end()) {
 			row->erase(remove(row->begin(), row->end(), indexToDelete));
+		}
+	}
+}
+
+void Solver::unmarkAntecedentForVariable(int clause_index) {
+	// vector<int> antecedent; // var => clause index
+	for (int i = 0; i < antecedent.size(); i++) {
+		if (antecedent[i] == clause_index) {
+			antecedent[i] = -1;
 		}
 	}
 }
@@ -636,8 +644,8 @@ void Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 			lbd_score_map.erase(cnf[clause_index].cl());
 			activity_score_map.erase(cnf[clause_index].cl());
 			score_map.erase(cnf[clause_index].cl());
-			deleteLearntClauseFromWatches(clause_index, watches);
-			//TODO: add function to mark antecedent[var]=-1 is antecendant is deleted clause
+			deleteLearntClauseFromWatches(clause_index);
+			unmarkAntecedentForVariable(clause_index);
 			cnf.erase(cnf.begin() + clause_index); // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/	
 		}
 	}
