@@ -371,7 +371,7 @@ Done    2) in backtrack function we introduce the concept of a global restart (v
             3.2) We have to create a new map that recalculates indices of clauses.
                  For example if we had 4 clauses and deleted the third one, map will be:
                  {old_idx : new_idx}
-                 index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
+                 index_recalculation_map = {0:0, 1:1, 2:-1, 3:2} <- Done
             3.3) in antecedents for each variable we change all indices by index_recalculation_map
             3.4) in watchers:
                 for lit in watchers.size():
