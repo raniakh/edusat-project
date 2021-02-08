@@ -1,6 +1,6 @@
 #include "edusat.h"
 
-
+int restarts_num = 0;
 Solver S;
 
 using namespace std;
@@ -341,13 +341,52 @@ still not sure where to delete clauses.
 options for now: 
 	1) inside swtich case C_UNSAT
 	2) outside of switch
+    3) outside of the BCP() function, - in function _solve()
+Idea:
+    When we erase half of the learnt clauses:
+        -> antecedent vector now isn't correct.
+        More than that, for part of the clauses we don't even sure that current assignment is correct.
+        Hence maybe it is a good idea to make deletion only after restart?
+        It also can be the case, since we  make restart if the number of conflicts learned in current decision level has passed the threshold.
+        From one point it can be seen as lazy solution, but threshold is actually much smaller than 20000 + 500*x most of the times.
+Another idea:
+    We can make artificial restart when we get to 20000 + 500*x conflicts (not really artificial, but it's like general threshold for algorithm run)
 possible difficulties:
-	1) affecting watches vector, possibly I need to delete clauses indices that was deleted due to our enhancement from watches vector 
-	2) maintaning cnf vector, Can the deleted clauses be in the middle of the cnf vector? do i need to resize it in order to avoid empty cells? 
+	1) affecting watches vector, possibly I need to delete clauses indices that was deleted due to our enhancement from watches vector
+	2) maintaning cnf vector, Can the deleted clauses be in the middle of the cnf vector? do i need to resize it in order to avoid empty cells?
 	3) does it affect antecedent vector?
-	4) delete those clauses from lbd_score_map 
+	4) delete those clauses from lbd_score_map
 	5) delete those clauses from activity_score_map
 	6) delete those clauses from score_map
+
+Solution based on my ideas:
+Done    0) We have vector deletion_candidates = learnt clauses - asserting clauses
+Done       We store them as map {index in cnf : clause_t} (var name: deletion_candidates)
+        When we get to 20000 + 500*x conflicts we:
+Done    1) let algorithm finish BCP function.
+Done    2) in backtrack function we introduce the concept of a global restart (var name: DYNAMIC_RESTART_FLAG)
+            (which does the same as local restart, but on another condition)
+        3) After restart we need to clean antecedent and watches vectors (in function clauses_deletion() )
+            3.1) We sort deletion_candidates by score (sort_by_score function) and get list of clauses indices that we gonna delete from cnf
+            3.2) We have to create a new map that recalculates indices of clauses.
+                 For example if we had 4 clauses and deleted the third one, map will be:
+                 {old_idx : new_idx}
+                 index_recalculation_map = {0:0, 1:1, 2:-1, 3:2} <- Done
+            3.3) in antecedents for each variable we change all indices by index_recalculation_map
+            3.4) in watchers:
+                for lit in watchers.size():
+                    for clause_num in watchers[lit]:
+                        if(index_recalculation_map[watchers[lit][clause_num]]=-1):
+                            watchers[lit].pop(clause_num)
+                        else:
+                            watchers[lit][clause_num] = index_recalculation_map[clause_num]
+        4) Finally after there are no references on clauses that gonna be deleted we erase them:
+            4.1) from cnf
+            4.2) from lbd_score_map
+            4.3) activity_score_map
+            4.3) score_map
+            4.3) change number of learnt clauses
+
 */
 SolverState Solver::BCP() {
 	if (verbose_now()) cout << "BCP" << endl;
@@ -392,6 +431,11 @@ SolverState Solver::BCP() {
 				if (verbose_now()) cout << "propagating: ";
 				assert_lit(other_watch);
 				antecedent[l2v(other_watch)] = *it;
+				if(reversed_antecedent.find(*it)!=reversed_antecedent.end()) {
+                    reversed_antecedent[*it].push_back(l2v(other_watch));
+                } else{
+				    reversed_antecedent[*it] = {l2v(other_watch)};
+				}
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
 				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
 				updateLBDscore(c.cl());
@@ -434,8 +478,8 @@ SolverState Solver::BCP() {
 
 		//print_watches();
 		if (conflicting_clause_idx >= 0) {
-			conflicts_counter++;
-			return SolverState::CONFLICT; 
+			num_conflicts++;
+			return SolverState::CONFLICT;
 		}
 		new_watch_list.clear();
 	}
@@ -612,43 +656,102 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 	return sorted_vec;
 }
 
-void Solver::deleteLearntClauseFromWatches(int indexToDelete) {
-	//vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
-	vector<vector<int>>::iterator row;
-	//vector<int>::iterator col;
-	for (row = watches.begin(); row != watches.end(); row++) {
-		if (find(row->begin(), row->end(), indexToDelete) != row->end()) {
-			row->erase(remove(row->begin(), row->end(), indexToDelete));
-		}
-	}
+int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses) {
+    // Returns the earliest decision level at witch all variables, that were propagated will have not deleted antecedents
+    // implemented reverse antecedents: clause index => var that got value from clause)
+
+    int size = to_be_deleted_clauses.size();
+    int min_level = dl;
+    for(int i=0; i<size; i++){
+        int clause = to_be_deleted_clauses[i];
+        // Checking that clause is antecedent for some variable
+        if(reversed_antecedent.find(clause)!=reversed_antecedent.end()){
+            vector<Var> vars = reversed_antecedent[to_be_deleted_clauses[i]];
+            for(int j=0; j<vars.size(); j++){
+                min_level = min(min_level,dlevel[vars[j]]);
+            }
+        }
+    }
+    return min_level;
 }
 
-void Solver::unmarkAntecedentForVariable(int clause_index) {
-	// vector<int> antecedent; // var => clause index
-	for (int i = 0; i < antecedent.size(); i++) {
-		if (antecedent[i] == clause_index) {
-			antecedent[i] = -1;
-		}
-	}
+void Solver::deleteLearntClauseFromWatches(int clause_index, int recalculated_index) {
+    //vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
+    vector<vector<int>>::iterator row;
+    //vector<int>::iterator col;
+    for (int i = 0; i< watches.size(); i++) {
+        if (find(watches[i].begin(), watches[i].end(), clause_index) != watches[i].end()) {
+            watches[i].erase(remove(watches[i].begin(), watches[i].end(), clause_index));
+            if (recalculated_index != -1) {
+                watches[i].push_back(recalculated_index);
+            }
+        }
+    }
 }
 
-void Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
-	int clause_index, score;
-	int size = vec.size();
-	int mid = size / 2;
+void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_index) {
+    // vector<int> antecedent; // var => clause index
+    if(reversed_antecedent.find(clause_index)!=reversed_antecedent.end()){
+        vector<Var> vars = reversed_antecedent[clause_index];
+        for(int j=0; j<vars.size(); j++){
+            antecedent[vars[j]] = recalculated_index;
+        }
+    }
+}
 
-	for (int i = mid; i < size; i++) {
-		clause_index = vec[i].first;
-		score = vec[i].second;
-		if (!isAssertingClause(cnf[clause_index].cl(), dl)) {
-			lbd_score_map.erase(cnf[clause_index].cl());
-			activity_score_map.erase(cnf[clause_index].cl());
-			score_map.erase(cnf[clause_index].cl());
-			deleteLearntClauseFromWatches(clause_index);
-			unmarkAntecedentForVariable(clause_index);
-			cnf.erase(cnf.begin() + clause_index); // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/	
-		}
-	}
+vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
+    int clause_index, score;
+    int size = vec.size();
+    int mid = size / 2;
+    vector <int> clauses_to_delete;
+    int amount_to_delete = size/2;
+    int counter_removed=0;
+    map <int, int> index_recalculation_map;
+    // index_recalculation_map construction
+    for(int i=size-1;i>0;i--){
+        //        {old_idx : new_idx}
+        //        index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
+        clause_index = vec[i].first;
+        score = vec[i].second;
+        if (!isAssertingClause(cnf[clause_index].cl(), dl) && counter_removed<amount_to_delete) {
+            counter_removed++;
+            clauses_to_delete.push_back(clause_index); // not delete yet
+            index_recalculation_map.insert(pair<int,int> (clause_index, -1));
+        }
+        else{
+            index_recalculation_map.insert(pair<int,int> (clause_index, clause_index));
+        }
+        // 1, 2 ,delete 3 ,4 , 5 , delete 6, 7
+        //counter_removed = 2
+        // 1, 2 , -1, 3, 4, -1, 7-2=5
+    }
+    // now we need to change all not deleted clauses
+    int minus = 0;
+    for(int i=0; i<vec.size(); i++){
+        if(index_recalculation_map[i]==-1){
+            minus ++;
+        }
+        else{
+            index_recalculation_map[i] -= minus;
+        }
+    }
+
+    for(int i=0;i<vec.size();i++){
+        clause_index = vec[i].first;
+        score = vec[i].second;
+        int recalculated_index = index_recalculation_map[clause_index];
+        if(recalculated_index==-1){
+            lbd_score_map.erase(cnf[clause_index].cl());
+            activity_score_map.erase(cnf[clause_index].cl());
+            score_map.erase(cnf[clause_index].cl());
+            cnf.erase(cnf.begin() + clause_index); // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
+            }
+        deleteLearntClauseFromWatches(clause_index, recalculated_index);
+        unmarkAntecedentForVariable(clause_index, recalculated_index);
+    }
+    // todo: write destructor for index_recalculation_map
+
+    return clauses_to_delete;
 }
 
 /// <summary>
@@ -661,6 +764,7 @@ void Solver::backtrack(int k) {
 	// decision level has passed the threshold. 
 	if (k > 0 && (num_learned - conflicts_at_dl[k] > restart_threshold)) {	// "local restart"	
 		         // learned clauses - number of learned clauses at decision level k = effort done in this subtree
+        restarts_num++;
 		restart(); 		
 		return;
 	}
@@ -681,6 +785,8 @@ void Solver::backtrack(int k) {
 	* 
 	*/
 		
+    // global restart means that we restart if the number of conflicts during
+    // whole run of the algorithm has passed the global threshold.
 	for (trail_t::iterator it = trail.begin() + separators[k+1]; it != trail.end(); ++it) { // erasing from k+1
 		// separators[k+1] -> index into trail , trail.begin() + separators[k+1]-> place in trail where decision level k+1 starts
 		Var v = l2v(*it); //*it = literal
@@ -696,6 +802,9 @@ void Solver::backtrack(int k) {
 	dl = k;	
 	assert_lit(asserted_lit);
 	antecedent[l2v(asserted_lit)] = cnf.size() - 1;
+	if(reversed_antecedent.find(cnf.size() - 1)!=reversed_antecedent.end()) {
+        reversed_antecedent[cnf.size() - 1].push_back(l2v(asserted_lit));
+    } else reversed_antecedent[cnf_size() - 1]={l2v(asserted_lit)};
 	conflicting_clause_idx = -1;
 }
 
@@ -786,6 +895,16 @@ SolverState Solver::_solve() {
 	while (true) {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
+		    /* place for clauses deletion */
+			// TODO: ask Vitaly why here and not after BCP()?
+            if (num_conflicts > 3 + 4 * num_deletion) {	// "dynamic restart"
+                vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
+                vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);
+                num_deletion++;
+                int dr_bktrc = get_dynamic_restart_backtracking_level(deleted_clauses);
+                backtrack(dr_bktrc);
+            }
+            /* place for clauses deletion */
 			res = BCP();
 			if (res == SolverState::UNSAT) return res; // conflict at decision level = 0
 			if (res == SolverState::CONFLICT)

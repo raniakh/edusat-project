@@ -263,8 +263,10 @@ class Solver {
 	map<clause_t, int> lbd_score_map;
 	map<clause_t, double> activity_score_map;
 	map<clause_t, double> score_map;
-	map<int, double> clauseIndx_score_map;
-	/* end of our helper data structures*/
+    map<int, clause_t> deletion_candidates; // learnt clauses indices, that are NOT asserting
+    map<int, double> clauseIndx_score_map;
+    map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => var => For variables that their value was assigned in BCP, this is the clause that gave this variable its value.
+    /* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
 	vector<double>	m_activity; // Var => activity
@@ -277,8 +279,8 @@ class Solver {
 		nclauses, 		// # clauses
 		nlits,			// # literals = 2*nvars				
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
-		conflicts_counter, // number of conflicts that we saw
-        deletion_num; // number of times we deleted half of the clauses
+		num_conflicts, // number of conflicts that we saw
+        num_deletion; // number of times we deleted half of the clauses
 	int					
 		num_learned, 	
 		num_decisions,
@@ -322,10 +324,13 @@ class Solver {
 	int LBD_score_calculation(clause_t clause); 
 	double clause_activity_calculation(clause_t clause); 
 	double clause_score_calculation(clause_t clause);
-	vector<pair<int, double>> sort_conflict_clauses_by_score();
-	void deleteLearntClauseFromWatches(int indexToDelete);
-	void unmarkAntecedentForVariable(int clause_index);
-	void deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
+    vector<pair<int, double>> sort_conflict_clauses_by_score();
+    void deleteLearntClauseFromWatches(int clause_index, int recalculated_index);
+    void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
+    vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
+
+    int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
+
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
@@ -344,7 +349,7 @@ public:
 		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0), 
 		num_restarts(0), m_var_inc(1.0), qhead(0), 
 		/* our helping variables */
-		conflicts_counter(0), deletion_num(0),
+		num_conflicts(0), num_deletion(0),
 		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower), 
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
@@ -412,6 +417,8 @@ public:
 
 	void print_stats() {cout << endl << "Statistics: " << endl << "===================" << endl << 
 		"### Restarts:\t\t" << num_restarts << endl <<
+        "### Dynamic restarts:\t\t" << num_deletion << endl <<
+        "### Conflicts:\t\t" << num_conflicts << endl <<
 		"### Learned-clauses:\t" << num_learned << endl <<
 		"### Decisions:\t\t" << num_decisions << endl <<
 		"### Implications:\t" << num_assignments - num_decisions << endl <<
