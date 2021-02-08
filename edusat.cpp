@@ -584,6 +584,7 @@ int Solver::analyze(const Clause conflicting) {
 }
 
 void Solver::increaseVariableActivityScore(Var v) {
+	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
 	m_Score2Vars[m_activity[v]].erase(v);
 	m_activity[v] += 100;
 	m_Score2Vars[m_activity[v]].insert(v);
@@ -604,6 +605,7 @@ bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
 }
 
 void Solver::updateLBDscore(clause_t clause) {
+	if (verbose_now()) cout << " updateLBDscore() clause = " << clause.data() << endl;
 	// if this is a learnt clause
 	if (lbd_score_map.find(clause) != lbd_score_map.end()) {
 		int new_lbd_score = LBD_score_calculation(clause);
@@ -642,6 +644,7 @@ bool cmp(pair<int,double> &a, pair<int,double> &b) {
 }
 
 vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
+	if (verbose_now()) cout << " sort_conflict_clauses_by_score() " << endl;
 	vector<pair<int, double>> sorted_vec;
 
 	//copy key-value pair from clauseIndx_score_map to vector
@@ -659,7 +662,7 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses) {
     // Returns the earliest decision level at witch all variables, that were propagated will have not deleted antecedents
     // implemented reverse antecedents: clause index => var that got value from clause)
-
+	if (verbose_now()) cout << " get_dynamic_restart_backtracking_level() " << endl;
     int size = to_be_deleted_clauses.size();
     int min_level = dl;
     for(int i=0; i<size; i++){
@@ -677,6 +680,8 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
 
 void Solver::deleteLearntClauseFromWatches(int clause_index, int recalculated_index) {
     //vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
+	if (verbose_now()) cout << " deleteLearntClauseFromWatches() clause_index = " << clause_index << " recalculated_index = " 
+		<< recalculated_index << endl;
     vector<vector<int>>::iterator row;
     //vector<int>::iterator col;
     for (int i = 0; i< watches.size(); i++) {
@@ -690,6 +695,8 @@ void Solver::deleteLearntClauseFromWatches(int clause_index, int recalculated_in
 }
 
 void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_index) {
+	if (verbose_now()) cout << " unmarkAntecedentForVariable() clause_index = " << clause_index << " recalculated_index = "
+		<< recalculated_index << endl;
     // vector<int> antecedent; // var => clause index
     if(reversed_antecedent.find(clause_index)!=reversed_antecedent.end()){
         vector<Var> vars = reversed_antecedent[clause_index];
@@ -700,6 +707,7 @@ void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_inde
 }
 
 vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
+	if (verbose_now()) cout << " deleteHalfLeanrtClauses() " << endl;
     int clause_index, score;
     int size = vec.size();
     int mid = size / 2;
@@ -809,6 +817,7 @@ void Solver::backtrack(int k) {
 }
 
 void Solver::validate_assignment() {
+	if (verbose_now()) cout << "validate_assignment()" << endl;
 	for (unsigned int i = 1; i <= nvars; ++i) if (state[i] == VarState::V_UNASSIGNED) {
 		cout << "Unassigned var: " + to_string(i) << endl; // This is supposed to happen only if the variable does not appear in any clause
 	}
