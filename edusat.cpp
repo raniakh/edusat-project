@@ -708,7 +708,8 @@ void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_inde
 
 vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 	if (verbose_now()) cout << " deleteHalfLeanrtClauses() " << endl;
-    int clause_index, score;
+    int clause_index;
+	double score;
     int size = vec.size();
     int mid = size / 2;
     vector <int> clauses_to_delete;
@@ -716,33 +717,38 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
     int counter_removed=0;
     map <int, int> index_recalculation_map;
     // index_recalculation_map construction
-    for(int i=size-1;i>0;i--){
+    for(int i=size-1;i>=0;i--){
         //        {old_idx : new_idx}
         //        index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
         clause_index = vec[i].first;
         score = vec[i].second;
         if (!isAssertingClause(cnf[clause_index].cl(), dl) && counter_removed<amount_to_delete) {
             counter_removed++;
-            clauses_to_delete.push_back(clause_index); // not delete yet
+            clauses_to_delete.push_back(clause_index); // not deleted yet
             index_recalculation_map.insert(pair<int,int> (clause_index, -1));
         }
         else{
             index_recalculation_map.insert(pair<int,int> (clause_index, clause_index));
         }
-        // 1, 2 ,delete 3 ,4 , 5 , delete 6, 7
-        //counter_removed = 2
-        // 1, 2 , -1, 3, 4, -1, 7-2=5
     }
-    // now we need to change all not deleted clauses
-    int minus = 0;
-    for(int i=0; i<vec.size(); i++){
-        if(index_recalculation_map[i]==-1){
-            minus ++;
-        }
-        else{
-            index_recalculation_map[i] -= minus;
-        }
-    }
+	/*until now index_recalculation_map has only conflict clauses indices. 
+	* we need to add all cnf[] indices
+	*/
+    // now we need to change all not deleted clauses 
+	int conflict_number = 0;
+	for (int i = 0; i < cnf.size(); i++) {
+		if (index_recalculation_map.find(i) != index_recalculation_map.end()) { // if clause index exists
+			if (index_recalculation_map[i] == -1) {
+				conflict_number++;
+			}
+			else {
+				index_recalculation_map[i] = i - conflict_number;
+			}
+		}
+		else {
+			index_recalculation_map[i] = i - conflict_number;
+		}
+	}
 
     for(int i=0;i<vec.size();i++){
         clause_index = vec[i].first;
@@ -751,12 +757,18 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
         if(recalculated_index==-1){
             lbd_score_map.erase(cnf[clause_index].cl());
             activity_score_map.erase(cnf[clause_index].cl());
-            score_map.erase(cnf[clause_index].cl());
-            cnf.erase(cnf.begin() + clause_index); // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
+            score_map.erase(cnf[clause_index].cl()); 
             }
         deleteLearntClauseFromWatches(clause_index, recalculated_index);
         unmarkAntecedentForVariable(clause_index, recalculated_index);
+
     }
+	sort(clauses_to_delete.begin(), clauses_to_delete.end());
+	for (int i = 0; i < clauses_to_delete.size(); i++) {
+		if (verbose_now()) cout << "errasing from cnf of size = "<<cnf.size() << "clauses_to_delete[i] = "
+			<< clauses_to_delete[i] << "clauses_to_delete[i]-i = "<< clauses_to_delete[i] - i << endl;
+		cnf.erase(cnf.begin() + (clauses_to_delete[i]-i)); // // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
+	}
     // todo: write destructor for index_recalculation_map
 
     return clauses_to_delete;

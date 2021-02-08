@@ -2,17 +2,8 @@
 C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(673,27): warning C4018: '<': signed/unsigned mismatch
 C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(687,22): warning C4018: '<': signed/unsigned mismatch
 C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(703,23): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(723,23): warning C4244: '=': conversion from '_Ty2' to 'int', possible loss of data
-          with
-          [
-              _Ty2=double
-          ]
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(738,19): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(747,18): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(749,23): warning C4244: '=': conversion from '_Ty2' to 'int', possible loss of data
-          with
-          [
-              _Ty2=double
-          ]
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(742,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(756,18): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(771,20): warning C4018: '<': signed/unsigned mismatch
 edusat.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
   edusat.vcxproj -> C:\Users\rania\source\repos\edusat\Debug\edusat.exe
