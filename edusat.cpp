@@ -918,7 +918,7 @@ SolverState Solver::_solve() {
 		while (true) {
 		    /* place for clauses deletion */
 			// TODO: ask Vitaly why here and not after BCP()?
-            if (num_conflicts > 3 + 4 * num_deletion) {	// "dynamic restart"
+            if (num_conflicts > 20000 + 500 * num_deletion) {	// "dynamic restart"
                 vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
                 vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);
                 num_deletion++;
