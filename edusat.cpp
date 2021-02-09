@@ -678,7 +678,7 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
     return min_level;
 }
 
-void Solver::deleteLearntClauseFromWatches(int clause_index, int recalculated_index) {
+void Solver::updateIndicesInWatches(int clause_index, int recalculated_index) {
     //vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
 	if (verbose_now()) cout << " deleteLearntClauseFromWatches() clause_index = " << clause_index << " recalculated_index = " 
 		<< recalculated_index << endl;
@@ -759,7 +759,7 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
             activity_score_map.erase(cnf[clause_index].cl());
             score_map.erase(cnf[clause_index].cl()); 
             }
-        deleteLearntClauseFromWatches(clause_index, recalculated_index);
+        updateIndicesInWatches(clause_index, recalculated_index);
         unmarkAntecedentForVariable(clause_index, recalculated_index);
 
     }
