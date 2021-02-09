@@ -683,7 +683,6 @@ void Solver::updateIndicesInWatches(int clause_index, int recalculated_index) {
 	if (verbose_now()) cout << " deleteLearntClauseFromWatches() clause_index = " << clause_index << " recalculated_index = " 
 		<< recalculated_index << endl;
     vector<vector<int>>::iterator row;
-    //vector<int>::iterator col;
     for (int i = 0; i< watches.size(); i++) {
         if (find(watches[i].begin(), watches[i].end(), clause_index) != watches[i].end()) {
             watches[i].erase(remove(watches[i].begin(), watches[i].end(), clause_index));
@@ -769,7 +768,6 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 			<< clauses_to_delete[i] << "clauses_to_delete[i]-i = "<< clauses_to_delete[i] - i << endl;
 		cnf.erase(cnf.begin() + (clauses_to_delete[i]-i)); // // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
 	}
-    // todo: write destructor for index_recalculation_map
 
     return clauses_to_delete;
 }
@@ -917,7 +915,6 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-			// TODO: ask Vitaly why here and not after BCP()?
             if (num_conflicts > 20000 + 500 * num_deletion) {	// "dynamic restart"
                 vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
                 vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);
