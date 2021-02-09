@@ -325,7 +325,7 @@ class Solver {
 	double clause_activity_calculation(clause_t clause); 
 	double clause_score_calculation(clause_t clause);
     vector<pair<int, double>> sort_conflict_clauses_by_score();
-    void deleteLearntClauseFromWatches(int clause_index, int recalculated_index);
+    void updateIndicesInWatches(int clause_index, int recalculated_index);
     void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
     vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
 
