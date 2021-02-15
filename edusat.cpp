@@ -588,6 +588,10 @@ int Solver::analyze(const Clause conflicting) {
 void Solver::increaseVariableActivityScore(Var v) {
 	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
 	double tmp_score = m_activity[v];
+
+	if (m_VarsSameScore_it != m_Score2Vars_it->second.end() && *m_VarsSameScore_it == v) {
+		m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+	}
 	m_Score2Vars[m_activity[v]].erase(v);	
 	m_activity[v] += 5;
 	if (m_Score2Vars.find(m_activity[v]) != m_Score2Vars.end()) {
