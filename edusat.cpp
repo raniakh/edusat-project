@@ -114,9 +114,11 @@ void Solver::reset() { // invoked initially + every restart
 
 
 inline void Solver::reset_iterators(double where) {
+	cout << "reset_iterators - where = "<< where << endl;
 	m_Score2Vars_it = (where == 0) ? m_Score2Vars.begin() : m_Score2Vars.lower_bound(where);
 	Assert(m_Score2Vars_it != m_Score2Vars.end());
 	m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+	cout << "m_Score2Vars_it->first = " << m_Score2Vars_it->first <<endl;
 	m_should_reset_iterators = false;
 }
 
@@ -247,9 +249,9 @@ SolverState Solver::decide(){
 		if (m_should_reset_iterators) reset_iterators(m_curr_activity);
 		Var v = 0;
 		int cnt = 0;
-		if (m_Score2Vars_it == m_Score2Vars.end()) break;
+		if (m_Score2Vars_it == m_Score2Vars.end()) break; 
 		while (true) { // scores from high to low
-			while (m_VarsSameScore_it != m_Score2Vars_it->second.end()) {
+			while (m_VarsSameScore_it != m_Score2Vars_it->second.end()) { // BUG
 				v = *m_VarsSameScore_it;
 				++m_VarsSameScore_it;
 				++cnt;
@@ -457,7 +459,7 @@ SolverState Solver::BCP() {
 						Clause antecedent_clause = cnf[ant];
 						if (verbose_now()) cout << "BCP::propagating:: cnf[ant] = " << antecedent_clause.cl().data() << endl;
 						if (antecedent_clause.cl().size() == 2) { // if antecedent is a Glue Clause
-							if (verbose_now()) cout << "activity score += 2 for variable " << v << endl;	
+							if (verbose_now()) cout << "activity score += 5 for variable " << v << endl;	
 							increaseVariableActivityScore(v);
 						}
 					} // if(ant != -1)
@@ -585,9 +587,22 @@ int Solver::analyze(const Clause conflicting) {
 
 void Solver::increaseVariableActivityScore(Var v) {
 	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
-	m_Score2Vars[m_activity[v]].erase(v);
-	m_activity[v] += 100;
-	m_Score2Vars[m_activity[v]].insert(v);
+	double tmp_score = m_activity[v];
+	m_Score2Vars[m_activity[v]].erase(v);	
+	m_activity[v] += 5;
+	if (m_Score2Vars.find(m_activity[v]) != m_Score2Vars.end()) {
+		m_Score2Vars[m_activity[v]].insert(v);
+	}
+	else {
+		m_Score2Vars[m_activity[v]] = unordered_set<int>({ v });
+	}
+	if (m_Score2Vars[tmp_score].size() == 0) {
+		if (m_Score2Vars_it->second.size() == 0) {
+			++m_Score2Vars_it;
+			m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+		}	
+		m_Score2Vars.erase(tmp_score);
+	}
 }
 
 bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
@@ -916,15 +931,18 @@ SolverState Solver::_solve() {
 		while (true) {
 		    /* place for clauses deletion */
             if (num_conflicts > 20000 + 500 * num_deletion) {	// "dynamic restart"
+				cout << "dynamic restart" << endl;
                 vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
                 vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);
                 num_deletion++;
                 int dr_bktrc = get_dynamic_restart_backtracking_level(deleted_clauses);
+				cout << "backtracking to level: "<< dr_bktrc << endl;
                 backtrack(dr_bktrc);
             }
             /* place for clauses deletion */
 			res = BCP();
-			if (res == SolverState::UNSAT) return res; // conflict at decision level = 0
+			if (res == SolverState::UNSAT) 
+				return res; // conflict at decision level = 0
 			if (res == SolverState::CONFLICT)
 				backtrack(analyze(cnf[conflicting_clause_idx])); // cnf[conflicting_clause_idx] is a clause
 			else break;
