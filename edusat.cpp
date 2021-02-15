@@ -251,7 +251,7 @@ SolverState Solver::decide(){
 		int cnt = 0;
 		if (m_Score2Vars_it == m_Score2Vars.end()) break; 
 		while (true) { // scores from high to low
-			while (m_VarsSameScore_it != m_Score2Vars_it->second.end()) { // BUG
+			while (m_VarsSameScore_it != m_Score2Vars_it->second.end()) { 
 				v = *m_VarsSameScore_it;
 				++m_VarsSameScore_it;
 				++cnt;
@@ -589,7 +589,7 @@ void Solver::increaseVariableActivityScore(Var v) {
 	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
 	double tmp_score = m_activity[v];
 
-	if (m_VarsSameScore_it != m_Score2Vars_it->second.end() && *m_VarsSameScore_it == v) {
+	if (m_VarsSameScore_it != m_Score2Vars_it->second.end() && *m_VarsSameScore_it == v) { //BUG
 		m_VarsSameScore_it = m_Score2Vars_it->second.begin();
 	}
 	m_Score2Vars[m_activity[v]].erase(v);	
