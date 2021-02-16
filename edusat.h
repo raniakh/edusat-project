@@ -328,11 +328,14 @@ class Solver {
     vector<pair<int, double>> sort_conflict_clauses_by_score();
     void updateIndicesInWatches(int clause_index, int recalculated_index);
     void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
+	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
+
+	vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> sorted_conflict_clauses);
 
 	// those 4 function is equvivalent of deleteHalfLeanrtClauses()
 	map <int, int> index_recalculation_map_creation(vector<pair<int, double>> vec);
 	vector<int> deletion_candidates_creation(map <int, int>& index_recalculation_map);
-	void watchers_and_antecedent_update(vector<pair<int, double>> vec, map <int, int> index_recalculation_map);
+	void watchers_and_antecedent_update(map <int, int> index_recalculation_map);
 	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
 
     int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
