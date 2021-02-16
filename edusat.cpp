@@ -589,9 +589,16 @@ void Solver::increaseVariableActivityScore(Var v) {
 	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
 	double tmp_score = m_activity[v];
 
-	if (m_VarsSameScore_it != m_Score2Vars_it->second.end() && *m_VarsSameScore_it == v) { //BUG
-		m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+	//if (m_VarsSameScore_it != m_Score2Vars_it->second.end())//BUG
+	//{ 
+	//	if(*m_VarsSameScore_it == v){
+	//		m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+	//	}
+	//}
+	if (m_Score2Vars_it != m_Score2Vars.end()) {
+		m_VarsSameScore_it = m_Score2Vars_it->second.begin(); //maybe?
 	}
+	
 	m_Score2Vars[m_activity[v]].erase(v);	
 	m_activity[v] += 5;
 	if (m_Score2Vars.find(m_activity[v]) != m_Score2Vars.end()) {
@@ -600,13 +607,24 @@ void Solver::increaseVariableActivityScore(Var v) {
 	else {
 		m_Score2Vars[m_activity[v]] = unordered_set<int>({ v });
 	}
-	if (m_Score2Vars[tmp_score].size() == 0) {
+	if (m_Score2Vars[tmp_score].size() == 0 && m_Score2Vars_it->first == tmp_score) {
 		if (m_Score2Vars_it->second.size() == 0) {
-			++m_Score2Vars_it;
-			m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+			++m_Score2Vars_it;	
 		}	
 		m_Score2Vars.erase(tmp_score);
+		if (m_Score2Vars_it == m_Score2Vars.end()) {
+			//--m_Score2Vars_it;
+			return;
+		}
+		else {
+			m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+		}
 	}
+
+	//if (m_VarsSameScore_it != m_Score2Vars_it->second.end())//BUG
+	//{
+	//	cout << "************* increaseVariableActivityScore second if check m_VarsSameScore_it ******************" << endl;
+	//}
 }
 
 bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
@@ -697,6 +715,21 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
     return min_level;
 }
 
+void Solver::updateClauseIndx_score_map(int clause_index, int recalculated_index) {
+	if (verbose_now()) cout << " updateClauseIndx_score_map() clause_index = " << clause_index << " recalculated_index = "
+		<< recalculated_index << endl;
+	if (recalculated_index == -1) {
+		clauseIndx_score_map.erase(clause_index);
+	}
+	else {
+		if (clauseIndx_score_map.find(clause_index) != clauseIndx_score_map.end()) {
+			double score = clauseIndx_score_map[clause_index];
+			clauseIndx_score_map.erase(clause_index);
+			clauseIndx_score_map.insert(pair<int, double>(recalculated_index, score));
+		}	
+	}
+}
+
 void Solver::updateIndicesInWatches(int clause_index, int recalculated_index) {
     //vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
 	if (verbose_now()) cout << " deleteLearntClauseFromWatches() clause_index = " << clause_index << " recalculated_index = " 
@@ -721,6 +754,8 @@ void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_inde
         for(int j=0; j<vars.size(); j++){
             antecedent[vars[j]] = recalculated_index;
         }
+		reversed_antecedent.insert(pair<int, vector<int>>(recalculated_index, vars));
+		reversed_antecedent.erase(clause_index);
     }
 }
 
@@ -768,19 +803,19 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 		}
 	}
 
-    for(int i=0;i<vec.size();i++){
-        clause_index = vec[i].first;
-        score = vec[i].second;
-        int recalculated_index = index_recalculation_map[clause_index];
-        if(recalculated_index==-1){
-            lbd_score_map.erase(cnf[clause_index].cl());
-            activity_score_map.erase(cnf[clause_index].cl());
-            score_map.erase(cnf[clause_index].cl()); 
-            }
-        updateIndicesInWatches(clause_index, recalculated_index);
-        unmarkAntecedentForVariable(clause_index, recalculated_index);
+	for (int clause_index = 0; clause_index < cnf.size(); clause_index++) {
+		int recalculated_index = index_recalculation_map[clause_index];
+		if (recalculated_index == -1) {
+			lbd_score_map.erase(cnf[clause_index].cl());
+			activity_score_map.erase(cnf[clause_index].cl());
+			score_map.erase(cnf[clause_index].cl());
+		}
+		updateClauseIndx_score_map(clause_index, recalculated_index);
+		updateIndicesInWatches(clause_index, recalculated_index);
+		unmarkAntecedentForVariable(clause_index, recalculated_index);
+	}
 
-    }
+
 	sort(clauses_to_delete.begin(), clauses_to_delete.end());
 	for (int i = 0; i < clauses_to_delete.size(); i++) {
 		if (verbose_now()) cout << "errasing from cnf of size = "<<cnf.size() << "clauses_to_delete[i] = "
@@ -934,7 +969,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if (num_conflicts > 20000 + 500 * num_deletion) {	// "dynamic restart"
+            if (num_conflicts > 10 + 4 * num_deletion) {	// "dynamic restart"
 				cout << "dynamic restart" << endl;
                 vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
                 vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);

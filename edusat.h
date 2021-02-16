@@ -331,6 +331,8 @@ class Solver {
 
     int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
 
+	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
+
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
