@@ -430,7 +430,10 @@ SolverState Solver::BCP() {
 				if (verbose_now()) cout << "clause is sat" << endl;
 				break; // nothing to do when clause has a satisfied literal.
 			case ClauseState::C_UNIT: { // new implication				
-				if (verbose_now()) cout << "propagating: ";
+				if (verbose_now()) cout << "propagating: "<< endl;
+				if (verbose_now()) {
+					cout << "Clause Index = "<< *it <<" is antecedent for literal " << l2rl(negate(NegatedLit)) <<endl;
+				}
 				assert_lit(other_watch);
 				antecedent[l2v(other_watch)] = *it;
 				if(reversed_antecedent.find(*it)!=reversed_antecedent.end()) {
@@ -542,11 +545,11 @@ int Solver::analyze(const Clause conflicting) {
 		marked[v] = false;
 		--resolve_num;
 		if(!resolve_num) continue; 
-		int ant = antecedent[v];		
-		current_clause = cnf[ant]; 
+		int ant = antecedent[v];
 		cout << "u = " << u << endl;
 		cout << "v = " << v << endl;
 		cout << "antecedent num = " << ant << endl;
+		current_clause = cnf[ant]; 		
 		cout << "clause " << ant << " = {";
 		for (auto itr = current_clause.cl().begin(); itr != current_clause.cl().end(); itr++) {
 			cout << *itr << ";";
