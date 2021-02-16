@@ -266,6 +266,7 @@ class Solver {
     map<int, clause_t> deletion_candidates; // learnt clauses indices, that are NOT asserting
     map<int, double> clauseIndx_score_map;
     map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => var => For variables that their value was assigned in BCP, this is the clause that gave this variable its value.
+	vector<int> last_deleted_idx; // indices that were deleted on last dynamic reset (15.02.2021 update)
     /* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
@@ -327,11 +328,17 @@ class Solver {
     vector<pair<int, double>> sort_conflict_clauses_by_score();
     void updateIndicesInWatches(int clause_index, int recalculated_index);
     void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
+	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
     vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
 
+	// those 4 function is equvivalent of deleteHalfLeanrtClauses()
+	map <int, int> index_recalculation_map_creation(vector<pair<int, double>> vec);
+	vector<int> deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map);
+	void update_maps_watchers_antecedents(map <int, int> index_recalculation_map);
+	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
     int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
 
-	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
+
 
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
