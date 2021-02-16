@@ -410,7 +410,16 @@ public:
 			char sign = (*it) == VarState::V_FALSE ? -1 : (*it) == VarState::V_TRUE ? 1 : 0;
 			cout << sign * (it - state.begin()) << " "; cout << endl;
 		}
-	}	
+	}
+
+	void print_cnf_state() {
+		cout << "CNF State: " << endl;
+		for (int i = 0; i < cnf.size(); i++) {
+			cout << i << ") ";
+			cnf[i].print_real_lits();
+			cout << endl;
+		}
+	}
 	
 	void print_watches() {
 		for (vector<vector<int> >::iterator it = watches.begin() + 1; it != watches.end(); ++it) {

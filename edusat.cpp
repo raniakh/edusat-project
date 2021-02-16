@@ -436,6 +436,8 @@ SolverState Solver::BCP() {
 				}
 				assert_lit(other_watch);
 				antecedent[l2v(other_watch)] = *it;
+				cout <<"antecedent["<<l2v(other_watch)<<"] = " <<*it <<endl;
+				cout<<"other_watch literal is" <<l2rl(other_watch )<<endl;
 				if(reversed_antecedent.find(*it)!=reversed_antecedent.end()) {
                     reversed_antecedent[*it].push_back(l2v(other_watch));
                 } else{
@@ -452,19 +454,20 @@ SolverState Solver::BCP() {
 				*		if antecedent is a glue clause then increase variable's score
 				*/
 				if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - before for" << endl;
+				c.print_real_lits();cout<<""<<endl;
 				for (clause_it it = c.cl().begin(); it != c.cl().end(); ++it) {
 					if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - after for" << endl;
 					Lit lit = *it;
 					Var v = l2v(lit);
 					int ant = antecedent[v];
-					if (verbose_now()) cout << "BCP::propagating:: antecedent[v] = " << ant << endl;
+					if (verbose_now()) cout << "BCP::propagating:: antecedent["<<v<< "] = " << ant << endl;
 					if (ant != -1) {
 						Clause antecedent_clause = cnf[ant];
-						if (verbose_now()) cout << "BCP::propagating:: cnf[ant] = " << antecedent_clause.cl().data() << endl;
+						if (verbose_now()) cout << "BCP::propagating:: cnf["<<ant<<"] = "; antecedent_clause.print_real_lits();
 						if (antecedent_clause.cl().size() == 2) { // if antecedent is a Glue Clause
 							if (verbose_now()) cout << "activity score += 5 for variable " << v << endl;	
 							increaseVariableActivityScore(v);
-						}
+						} antecedent_clause.print_real_lits();
 					} // if(ant != -1)
 				}
 				break;
@@ -546,21 +549,21 @@ int Solver::analyze(const Clause conflicting) {
 		--resolve_num;
 		if(!resolve_num) continue; 
 		int ant = antecedent[v];
-		cout << "u = " << u << endl;
+		cout << "u = " << l2rl(u) << endl;
 		cout << "v = " << v << endl;
 		cout << "antecedent num = " << ant << endl;
 		current_clause = cnf[ant]; 		
-		cout << "clause " << ant << " = {";
-		for (auto itr = current_clause.cl().begin(); itr != current_clause.cl().end(); itr++) {
-			cout << *itr << ";";
-		}
-		cout << "}" << endl;
+		cout << "clause " << ant << " = ";
+		current_clause.print_real_lits();
+		cout << endl;
 		cout << "deletion times = " << num_deletion << endl;
 		cout << "last deleted indices: {";
 		for (auto itr = last_deleted_idx.begin(); itr != last_deleted_idx.end(); itr++) {
 			cout << *itr << ";";
 		}
 		cout << "}" << endl;
+		cout << "cnf state right before exception" <<endl;
+		print_cnf_state();
 		current_clause.cl().erase(find(current_clause.cl().begin(), current_clause.cl().end(), u));	
 	}	while (resolve_num > 0);
 	for (clause_it it = new_clause.cl().begin(); it != new_clause.cl().end(); ++it) 
@@ -725,11 +728,11 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
         if(reversed_antecedent.find(clause)!=reversed_antecedent.end()){
             vector<Var> vars = reversed_antecedent[to_be_deleted_clauses[i]];
             for(int j=0; j<vars.size(); j++){
-                min_level = min(min_level,dlevel[vars[j]]);
+                min_level = min(min_level,dlevel[vars[j]]-1);
             }
         }
     }
-    return min_level;
+    return max(min_level,0);
 }
 
 void Solver::updateClauseIndx_score_map(int clause_index, int recalculated_index) {
@@ -800,6 +803,7 @@ map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>
 
 	return index_recalculation_map;
 }
+
 vector<int>  Solver::deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map) {
 	/*until now index_recalculation_map has only conflict clauses indices.
 	* we need to add all cnf[] indices
@@ -824,6 +828,7 @@ vector<int>  Solver::deletion_candidates_creation_and_updating_IndexRecalculatio
 
 	return clauses_to_be_deleted;
 }
+
 void Solver::update_maps_watchers_antecedents(map <int, int> index_recalculation_map) {
 	if (verbose_now()) cout << " watchers_and_antecedent_update() " << endl;
 	// Watches and Atecendents update
@@ -997,6 +1002,7 @@ SolverState Solver::_solve() {
 		    /* place for clauses deletion */
             if (num_conflicts > 10 + 4 * num_deletion) {	// "dynamic restart"
 				cout << "dynamic restart" << endl;
+				print_cnf_state();
 				vector<pair<int, double>> sorted_conflict_clauses = sort_conflict_clauses_by_score();
 				map <int, int> index_recalculation_map = index_recalculation_map_creation(sorted_conflict_clauses);
 				//// until now index_recalculation_map has only conflict clauses indices. 
@@ -1015,6 +1021,7 @@ SolverState Solver::_solve() {
 				int dr_bktrc = get_dynamic_restart_backtracking_level(clauses_to_be_deleted);
 				cout << "backtracking to level: "<< dr_bktrc << endl;
                 backtrack(dr_bktrc);
+				print_cnf_state();
             }
             /* place for clauses deletion */
 			res = BCP();
