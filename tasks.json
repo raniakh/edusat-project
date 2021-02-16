@@ -1,0 +1,674 @@
+[
+  {
+    "id": "Task-bj08amba2g4f3_k10",
+    "commandLine": "edusat.exe  bj08amba2g4f3.k10.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bj08amba2g4f3.k10.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bj08amba2g4f3.k10.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bj08amba2g4f3_k10",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-galileo-8",
+    "commandLine": "edusat.exe  bmc-galileo-8.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-galileo-8.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-galileo-8.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-galileo-8",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-galileo-9",
+    "commandLine": "edusat.exe  bmc-galileo-9.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-galileo-9.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-galileo-9.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-galileo-9",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-1",
+    "commandLine": "edusat.exe  bmc-ibm-1.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-1.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-1.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-1",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-10",
+    "commandLine": "edusat.exe  bmc-ibm-10.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-10.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-10.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-10",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-11",
+    "commandLine": "edusat.exe  bmc-ibm-11.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-11.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-11.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-11",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-12",
+    "commandLine": "edusat.exe  bmc-ibm-12.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-12.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-12.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-12",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-13",
+    "commandLine": "edusat.exe  bmc-ibm-13.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-13.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-13.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-13",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-2",
+    "commandLine": "edusat.exe  bmc-ibm-2.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-2.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-2.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-2",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-3",
+    "commandLine": "edusat.exe  bmc-ibm-3.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-3.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-3.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-3",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-4",
+    "commandLine": "edusat.exe  bmc-ibm-4.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-4.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-4.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-4",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-5",
+    "commandLine": "edusat.exe  bmc-ibm-5.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-5.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-5.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-5",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-6",
+    "commandLine": "edusat.exe  bmc-ibm-6.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-6.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-6.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-6",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  },
+  {
+    "id": "Task-bmc-ibm-7",
+    "commandLine": "edusat.exe  bmc-ibm-7.cnf",
+    "resourceFiles": [
+      {
+        "filePath": "bmc-ibm-7.cnf",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/bmc-ibm-7.cnf"
+      },
+      {
+        "filePath": "assignment.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/assignment.txt"
+      },
+      {
+        "filePath": "cmake_install.cmake",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/cmake_install.cmake"
+      },
+      {
+        "filePath": "CMakeCache.txt",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/CMakeCache.txt"
+      },
+      {
+        "filePath": "edusat",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat"
+      },
+      {
+        "filePath": "edusat_project_raniadev.cbp",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/edusat_project_raniadev.cbp"
+      },
+      {
+        "filePath": "Makefile",
+        "httpUrl": "https://la096265datastorage.blob.core.windows.net/tasks/student6/Makefile"
+      }
+    ],
+    "outputFiles": [
+      {
+        "destination": {
+          "container": {
+            "path": "student6/output/Task-bmc-ibm-7",
+            "containerUrl": "https://la096265datastorage.blob.core.windows.net/tasks/"
+          }
+        },
+        "filePattern": "..\\**\\*.txt",
+        "uploadOptions": {
+          "uploadCondition": "TaskSuccess"
+        }
+      }
+    ]
+  }
+]

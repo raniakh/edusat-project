@@ -394,7 +394,7 @@ SolverState Solver::BCP() {
 	// qhead = pointer into trail that points to the last literal that is still not handled 
 	// BCP starts from last decision level from last literal that is still not handled
 	while (qhead < trail.size()) { 
-		Lit NegatedLit = negate(trail[qhead++]); // in trail we save literal itself, in BCP 
+		Lit NegatedLit = negate(trail[qhead++]); // in trail we save literal itself, in BCP
 		Assert(lit_state(NegatedLit) == LitState::L_UNSAT);
 		if (verbose_now()) cout << "propagating " << l2rl(negate(NegatedLit)) << endl;
 		vector<int> new_watch_list; // The original watch list minus those clauses that changed a watch. The order is maintained. 
@@ -541,7 +541,21 @@ int Solver::analyze(const Clause conflicting) {
 		--resolve_num;
 		if(!resolve_num) continue; 
 		int ant = antecedent[v];		
-		current_clause = cnf[ant]; 
+		current_clause = cnf[ant];
+		cout << "u = " << u << endl;
+		cout << "v = " << v << endl;
+		cout << "antecedent num = " << ant << endl;
+		cout << "clause " << ant << " = {";
+		for (auto itr = current_clause.cl().begin(); itr != current_clause.cl().end(); itr++) {
+			cout << *itr << ";";
+		}
+		cout << "}" << endl;
+		cout << "deletion times = " << num_deletion << endl;
+		cout << "last deleted indices: {";
+		for (auto itr = last_deleted_idx.begin(); itr != last_deleted_idx.end(); itr++) {
+			cout << *itr << ";";
+		}
+		cout << "}" << endl;
 		current_clause.cl().erase(find(current_clause.cl().begin(), current_clause.cl().end(), u));	
 	}	while (resolve_num > 0);
 	for (clause_it it = new_clause.cl().begin(); it != new_clause.cl().end(); ++it) 
@@ -585,9 +599,20 @@ int Solver::analyze(const Clause conflicting) {
 
 void Solver::increaseVariableActivityScore(Var v) {
 	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
+	double tmp_score = m_activity[v];
 	m_Score2Vars[m_activity[v]].erase(v);
 	m_activity[v] += 100;
-	m_Score2Vars[m_activity[v]].insert(v);
+	if (m_Score2Vars.find(m_activity[v]) != m_Score2Vars.end()) {
+		m_Score2Vars[m_activity[v]].insert(v);
+	}
+	else {
+		m_Score2Vars[m_activity[v]] = unordered_set<int>({ v });
+	}
+	if (m_Score2Vars[tmp_score].size() == 0) {
+		m_Score2Vars.erase(tmp_score);
+	}
+	m_should_reset_iterators = true;
+	m_curr_activity = m_activity[v];
 }
 
 bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
@@ -705,40 +730,42 @@ void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_inde
     }
 }
 
-vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
-	if (verbose_now()) cout << " deleteHalfLeanrtClauses() " << endl;
-    int clause_index;
-	double score;
-    int size = vec.size();
-    int mid = size / 2;
-    vector <int> clauses_to_delete;
-    int amount_to_delete = size/2;
-    int counter_removed=0;
-    map <int, int> index_recalculation_map;
-    // index_recalculation_map construction
-    for(int i=size-1;i>=0;i--){
-        //        {old_idx : new_idx}
-        //        index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
-        clause_index = vec[i].first;
-        score = vec[i].second;
-        if (!isAssertingClause(cnf[clause_index].cl(), dl) && counter_removed<amount_to_delete) {
-            counter_removed++;
-            clauses_to_delete.push_back(clause_index); // not deleted yet
-            index_recalculation_map.insert(pair<int,int> (clause_index, -1));
-        }
-        else{
-            index_recalculation_map.insert(pair<int,int> (clause_index, clause_index));
-        }
-    }
-	/*until now index_recalculation_map has only conflict clauses indices. 
+map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>> sorted_conflict_clauses) {
+	if (verbose_now()) cout << " index_recalculation_map_creation() " << endl;
+	int conf_claus_num = sorted_conflict_clauses.size();
+	int amount_to_delete = conf_claus_num / 2;
+	int counter_removed = 0;
+	map <int, int> index_recalculation_map;
+	// index_recalculation_map construction
+	for (int i = conf_claus_num - 1; i >= 0; i--) {
+		//        {old_idx : new_idx}
+		//        index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
+		int clause_index = sorted_conflict_clauses[i].first;
+		double score = sorted_conflict_clauses[i].second;
+		if (!isAssertingClause(cnf[clause_index].cl(), dl) && counter_removed < amount_to_delete) {
+			counter_removed++;
+			index_recalculation_map.insert(pair<int, int>(clause_index, -1));
+		}
+		else {
+			index_recalculation_map.insert(pair<int, int>(clause_index, clause_index));
+		}
+	}
+
+	return index_recalculation_map;
+}
+
+vector<int>  Solver::deletion_candidates_creation(map <int, int>& index_recalculation_map) {
+	/*until now index_recalculation_map has only conflict clauses indices.
 	* we need to add all cnf[] indices
 	*/
-    // now we need to change all not deleted clauses 
+	// now we need to change all not deleted clauses 
 	int conflict_number = 0;
+	vector <int> clauses_to_be_deleted;
 	for (int i = 0; i < cnf.size(); i++) {
 		if (index_recalculation_map.find(i) != index_recalculation_map.end()) { // if clause index exists
 			if (index_recalculation_map[i] == -1) {
 				conflict_number++;
+				clauses_to_be_deleted.push_back(i); // not deleted yet
 			}
 			else {
 				index_recalculation_map[i] = i - conflict_number;
@@ -749,27 +776,39 @@ vector<int> Solver::deleteHalfLeanrtClauses(vector<pair<int, double>> vec) {
 		}
 	}
 
-    for(int i=0;i<vec.size();i++){
-        clause_index = vec[i].first;
-        score = vec[i].second;
-        int recalculated_index = index_recalculation_map[clause_index];
-        if(recalculated_index==-1){
-            lbd_score_map.erase(cnf[clause_index].cl());
-            activity_score_map.erase(cnf[clause_index].cl());
-            score_map.erase(cnf[clause_index].cl()); 
-            }
-        updateIndicesInWatches(clause_index, recalculated_index);
-        unmarkAntecedentForVariable(clause_index, recalculated_index);
+	return clauses_to_be_deleted;
+}
 
-    }
-	sort(clauses_to_delete.begin(), clauses_to_delete.end());
-	for (int i = 0; i < clauses_to_delete.size(); i++) {
-		if (verbose_now()) cout << "errasing from cnf of size = "<<cnf.size() << "clauses_to_delete[i] = "
-			<< clauses_to_delete[i] << "clauses_to_delete[i]-i = "<< clauses_to_delete[i] - i << endl;
-		cnf.erase(cnf.begin() + (clauses_to_delete[i]-i)); // // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
+
+void Solver::watchers_and_antecedent_update(vector<pair<int, double>> sorted_conflict_clauses, map <int, int> index_recalculation_map) {
+	if (verbose_now()) cout << " deleteHalfLeanrtClauses() " << endl;
+	int conf_claus_num = sorted_conflict_clauses.size();
+	// Watches and Atecendents update
+	for (int i = 0; i < conf_claus_num; i++) {
+		int clause_index = sorted_conflict_clauses[i].first;
+		double score = sorted_conflict_clauses[i].second;
+		int recalculated_index = index_recalculation_map[clause_index];
+		if (recalculated_index == -1) {
+			lbd_score_map.erase(cnf[clause_index].cl());
+			activity_score_map.erase(cnf[clause_index].cl());
+			score_map.erase(cnf[clause_index].cl());
+		}
+		updateIndicesInWatches(clause_index, recalculated_index);
+		unmarkAntecedentForVariable(clause_index, recalculated_index);
+
+	}
+}
+
+vector<int> Solver::cnf_update(vector <int> clauses_to_be_deleted) {
+	// Cnf update 
+	sort(clauses_to_be_deleted.begin(), clauses_to_be_deleted.end());
+	for (int i = 0; i < clauses_to_be_deleted.size(); i++) {
+		if (verbose_now()) cout << "errasing from cnf of size = " << cnf.size() << endl << " clauses_to_delete[i] = "
+			<< clauses_to_be_deleted[i] << "clauses_to_delete[i]-i = " << clauses_to_be_deleted[i] - i << endl;
+		cnf.erase(cnf.begin() + (clauses_to_be_deleted[i] - i)); // // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
 	}
 
-    return clauses_to_delete;
+	return clauses_to_be_deleted;
 }
 
 /// <summary>
@@ -915,12 +954,33 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if (num_conflicts > 20000 + 500 * num_deletion) {	// "dynamic restart"
-                vector<pair<int, double>> sorted_vec = sort_conflict_clauses_by_score();
-                vector<int> deleted_clauses = deleteHalfLeanrtClauses(sorted_vec);
-                num_deletion++;
-                int dr_bktrc = get_dynamic_restart_backtracking_level(deleted_clauses);
-                backtrack(dr_bktrc);
+            if (num_conflicts > 10 + 2 * num_deletion) {	// "dynamic restart"
+				num_deletion++;
+				backtrack(1);
+
+
+				//vector<pair<int, double>> sorted_conflict_clauses = sort_conflict_clauses_by_score();
+
+				//map <int, int> index_recalculation_map = index_recalculation_map_creation(sorted_conflict_clauses);
+
+				//// until now index_recalculation_map has only conflict clauses indices. 
+				//// we need to add all cnf indices 
+				//// now we need to change all not deleted clauses 
+				//vector <int> clauses_to_be_deleted = deletion_candidates_creation(index_recalculation_map);
+
+				//// todo: delete clauses_to_be_deleted. It was created for debugging
+				//last_deleted_idx.clear();
+				//last_deleted_idx = clauses_to_be_deleted;
+
+				//num_deletion++;
+				//int dr_bktrc = get_dynamic_restart_backtracking_level(clauses_to_be_deleted);
+				//backtrack(dr_bktrc);
+
+				//// Watches and Atecendents update
+				//watchers_and_antecedent_update(sorted_conflict_clauses, index_recalculation_map);
+
+				//// Cnf update 
+				//cnf_update(clauses_to_be_deleted);
             }
             /* place for clauses deletion */
 			res = BCP();
