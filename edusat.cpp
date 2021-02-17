@@ -545,7 +545,10 @@ int Solver::analyze(const Clause conflicting) {
 				}
 			}
 		}
-
+		for (auto iter : trail) {
+			cout << iter << ", ";
+		}
+		cout << endl;
 		while (t_it != trail.rend()) {
 			u = *t_it;
 			v = l2v(u);
@@ -826,6 +829,7 @@ map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>
 
 	return index_recalculation_map;
 }
+
 vector<int>  Solver::deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map) {
 	/*until now index_recalculation_map has only conflict clauses indices.
 	* we need to add all cnf[] indices
@@ -850,9 +854,26 @@ vector<int>  Solver::deletion_candidates_creation_and_updating_IndexRecalculatio
 
 	return clauses_to_be_deleted;
 }
+
+bool Solver::compare_clauses(clause_t cl1, clause_t cl2) {
+	if (cl1.size() != cl2.size()) return false;
+	for (int i = 0; i < cl1.size(); i++) {
+		if (cl1[i] != cl2[i]) return false;
+	}
+	return true;
+}
+
 void Solver::update_maps_watchers_antecedents(map <int, int> index_recalculation_map) {
 	if (verbose_now()) cout << " watchers_and_antecedent_update() " << endl;
 	// Watches and Atecendents update
+	for (int i = 0; i < cnf.size(); i++) {
+		for (int j = i+1; j < cnf.size(); j++) {
+			if (compare_clauses(cnf[i].cl(), cnf[j].cl())) {
+				cout << i; cnf[i].print_real_lits(); cout << endl;
+				cout << j; cnf[j].print_real_lits(); cout << endl;
+			}
+		}
+	}
 	for (int clause_index = 0; clause_index < cnf.size(); clause_index++) {
 		int recalculated_index = index_recalculation_map[clause_index];
 		if(recalculated_index != clause_index) {
@@ -861,7 +882,7 @@ void Solver::update_maps_watchers_antecedents(map <int, int> index_recalculation
                 lbd_score_map.erase(lbd_score_map.find(cnf[clause_index].cl()));
                 activity_score_map.erase(activity_score_map.find(cnf[clause_index].cl()));
                 score_map.erase(score_map.find(cnf[clause_index].cl()));
-            }
+            } 
             updateClauseIndx_score_map(clause_index, recalculated_index);
             updateIndicesInWatches(clause_index, recalculated_index);
             update_antecedent_and_reversed_antecedent(clause_index, recalculated_index);
@@ -881,6 +902,50 @@ vector<int> Solver::cnf_update(vector <int> clauses_to_be_deleted) {
 	}
 
 	return clauses_to_be_deleted;
+}
+
+void Solver::dynamic_backtrack(int k) {
+	if (verbose_now()) cout << "dynamic_backtrack()" << endl;
+	// local restart means that we restart if the number of conflicts learned in this 
+	// decision level has passed the threshold. 
+	if (k > 0 && (num_learned - conflicts_at_dl[k] > restart_threshold)) {	// "local restart"	
+				 // learned clauses - number of learned clauses at decision level k = effort done in this subtree
+		restarts_num++;
+		restart();
+		return;
+	}
+	// restart: erase the trail from level 1 and up. as if we are restarting solver all over again
+	// but we are not actually restarting solver all over again because we still have everything that we learnt and all the scores
+	// basically it is to backtrack to level 1
+	// level 0 -> true without any connection to all decisions made, that's why we do not delete them.
+	// local restart: criterion that decides when to do a restart.
+	// idea: after each decision, solver does a lot of work, when we backtrack to that decision we check how much work was invested in this sub-tree
+	// if there is a lot of work we restart because chances are there is no solution in this way.
+
+	static int counter = 0;
+
+	/*
+	* sort conflict clauses by score (lbd+activity) -> sort_conflict_clauses_by_score() - done
+	* find new k if smaller level of antecedant smaller than current k.
+	* remove half without asserting clauses. -> deleteHalfLeanrtClauses(vector<pair<int, double>> vec) - done
+	*
+	*/
+
+	// global restart means that we restart if the number of conflicts during
+	// whole run of the algorithm has passed the global threshold.
+	for (trail_t::iterator it = trail.begin() + separators[k]; it != trail.end(); ++it) { // erasing from k
+		// separators[k+1] -> index into trail , trail.begin() + separators[k]-> place in trail where decision level k starts
+		Var v = l2v(*it); //*it = literal
+		if (dlevel[v]) { // we need the condition because of learnt unary clauses. In that case we enforce an assignment with dlevel = 0.
+			state[v] = VarState::V_UNASSIGNED;
+			deleteAntecedent(v);
+			if (VarDecHeuristic == VAR_DEC_HEURISTIC::MINISAT) m_curr_activity = max(m_curr_activity, m_activity[v]);
+		}
+	}
+	if (VarDecHeuristic == VAR_DEC_HEURISTIC::MINISAT) m_should_reset_iterators = true;
+	trail.erase(trail.begin() + separators[k], trail.end());
+	qhead = trail.size();
+	dl = k;
 }
 
 /// <summary>
@@ -1036,7 +1101,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 			/* place for clauses deletion */
-			if (num_conflicts > 20000 + 4 * num_deletion) {	// "dynamic restart"
+			if (num_conflicts > 10 + 4 * num_deletion) {	// "dynamic restart"
                 cout << "DYNAMIC RESTART START" << endl;
                 print_cnf_state();
                 print_antecedents();
@@ -1049,27 +1114,30 @@ SolverState Solver::_solve() {
 				//// todo: delete clauses_to_be_deleted. It was created for debugging
 				last_deleted_idx.clear();
 				last_deleted_idx = clauses_to_be_deleted;
+				print_lbd_score();
 				//// Watches and Atecendents update
 				update_maps_watchers_antecedents(index_recalculation_map);
-
+				print_lbd_score();
 				//// Cnf update 
 				cnf_update(clauses_to_be_deleted);
 				num_deletion++;
 				int dr_bktrc = get_dynamic_restart_backtracking_level(clauses_to_be_deleted);
 				cout << "backtracking to level: " << dr_bktrc << endl;
-				backtrack(dr_bktrc);
+				dynamic_backtrack(dr_bktrc);
+				cout << "DYNAMIC RESTART OVER" << endl;
+				print_state();
+				print_antecedents();
 				print_cnf_state();
-                cout << "DYNAMIC RESTART OVER" << endl;
-                print_antecedents();
 			}
-			/* place for clauses deletion */
+			
 			res = BCP();
             cout << " BCP IS OVER :" << endl;
+			print_lbd_score();
             print_antecedents();
 			if (res == SolverState::UNSAT)
 				return res; // conflict at decision level = 0
 			if (res == SolverState::CONFLICT) {
-                backtrack(analyze(cnf[conflicting_clause_idx])); // cnf[conflicting_clause_idx] is a clause
+				backtrack(analyze(cnf[conflicting_clause_idx])); // cnf[conflicting_clause_idx] is a clause
                 cout << " NORMAL BACKTRACKING IS OVER :" << endl;
                 print_state();
                 print_antecedents();
@@ -1115,9 +1183,9 @@ void Solver::deleteAntecedent(Var variable) {
 /******************  main ******************************/
 // file start -> p cnf (number of variables) (number of clauses)
 int main(int argc, char** argv) {
-    //std::ofstream out("C:\\Project_path\\PROJECT\\edusat\\out.txt");
-    //std::streambuf* coutbuf = std::cout.rdbuf();
-    //std::cout.rdbuf(out.rdbuf()); // redirect std::cout to out.txt
+    std::ofstream out("C:\\Project_path\\PROJECT\\edusat\\out.txt");
+    std::streambuf* coutbuf = std::cout.rdbuf();
+    std::cout.rdbuf(out.rdbuf()); // redirect std::cout to out.txt
 
 	begin_time = cpuTime();
 	parse_options(argc, argv);

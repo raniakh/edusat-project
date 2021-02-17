@@ -343,7 +343,10 @@ class Solver {
 	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
 	int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
 
+	
+	void dynamic_backtrack(int k);
 
+	bool compare_clauses(clause_t cl1, clause_t cl2);
 
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
@@ -426,6 +429,16 @@ public:
 			cout << endl;
 		}
 	}
+
+	void print_lbd_score() {
+		cout << "LBD scores: " << endl;
+		for (int i = 0; i < cnf.size(); i++) {
+			cout << "LBD[" << i << "] = \t";
+			cout << LBD_score_calculation(cnf[i].cl()) << endl;
+		}
+	}
+
+	
 
     void print_antecedents() {
         cout << "Antecedents: " << endl;
