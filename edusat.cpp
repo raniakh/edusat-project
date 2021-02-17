@@ -1034,6 +1034,8 @@ SolverState Solver::_solve() {
 		    /* place for clauses deletion */
             if (num_conflicts > 10 + 4 * num_deletion) {	// "dynamic restart"
 				cout << "dynamic restart" << endl;
+				cout << "antecedents and cnf state before dynamic restart" << endl;
+				print_antecedents();
 				print_cnf_state();
 				vector<pair<int, double>> sorted_conflict_clauses = sort_conflict_clauses_by_score();
 				map <int, int> index_recalculation_map = index_recalculation_map_creation(sorted_conflict_clauses);
@@ -1053,8 +1055,10 @@ SolverState Solver::_solve() {
 				int dr_bktrc = get_dynamic_restart_backtracking_level(clauses_to_be_deleted);
 				cout << "backtracking to level: "<< dr_bktrc << endl;
                 backtrack(dr_bktrc);
-				print_cnf_state();
 				cout << "dynamic restart over" << endl;
+				cout << "antecedents and cnf state after dynamic restart" << endl;
+				print_antecedents();
+				print_cnf_state();
             }
             /* place for clauses deletion */
 			res = BCP();
@@ -1076,6 +1080,11 @@ SolverState Solver::_solve() {
 /******************  main ******************************/
 // file start -> p cnf (number of variables) (number of clauses)
 int main(int argc, char** argv){
+
+	std::ofstream out("out.txt");
+	std::streambuf* coutbuf = std::cout.rdbuf();
+	std::cout.rdbuf(out.rdbuf()); // redirect std::cout to out.txt
+
 	begin_time = cpuTime();
 	parse_options(argc, argv);
 	
