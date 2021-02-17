@@ -17,7 +17,7 @@ using namespace std;
 
 typedef int Var; // Variable
 typedef int Lit; // Literal
-typedef vector<Lit> clause_t; 
+typedef vector<Lit> clause_t;
 typedef clause_t::iterator clause_it;
 typedef vector<Lit> trail_t;
 
@@ -46,7 +46,7 @@ void Abort(string s, int i);
 enum class VAR_DEC_HEURISTIC {
 	MINISAT
 	// add other decision heuristics here. Add an option to choose between them.
- } ;
+};
 
 VAR_DEC_HEURISTIC VarDecHeuristic = VAR_DEC_HEURISTIC::MINISAT;
 /// <summary>
@@ -57,10 +57,10 @@ VAR_DEC_HEURISTIC VarDecHeuristic = VAR_DEC_HEURISTIC::MINISAT;
 /// </summary>
 enum class VAL_DEC_HEURISTIC {
 	/* Same as last value. Initially false*/
-	PHASESAVING, 
+	PHASESAVING,
 	/* Choose literal with highest frequency */
-	LITSCORE 
-} ;
+	LITSCORE
+};
 
 VAL_DEC_HEURISTIC ValDecHeuristic = VAL_DEC_HEURISTIC::PHASESAVING;
 
@@ -101,20 +101,21 @@ enum class ClauseState {
 /// <summary>
 /// state of a solver
 /// </summary>
-enum class SolverState{
+enum class SolverState {
 	UNSAT,
 	SAT,
-	CONFLICT, 
+	CONFLICT,
 	UNDEF,
 	TIMEOUT
-} ;
+};
 /***************** service functions **********************/
 
 #ifdef _MSC_VER
 #include <ctime>
 
 static inline double cpuTime(void) {
-    return (double)clock() / CLOCKS_PER_SEC; }
+	return (double)clock() / CLOCKS_PER_SEC;
+}
 #else
 
 #include <sys/time.h>
@@ -122,9 +123,10 @@ static inline double cpuTime(void) {
 #include <unistd.h>
 
 static inline double cpuTime(void) {
-    struct rusage ru;
-    getrusage(RUSAGE_SELF, &ru);
-    return (double)ru.ru_utime.tv_sec + (double)ru.ru_utime.tv_usec / 1000000; }
+	struct rusage ru;
+	getrusage(RUSAGE_SELF, &ru);
+	return (double)ru.ru_utime.tv_sec + (double)ru.ru_utime.tv_usec / 1000000;
+}
 #endif
 
 // For production wrap with #ifdef _DEBUG
@@ -138,10 +140,10 @@ void AssertCheck(bool cond, string func_name, int line, string msg = "") {
 
 
 bool match(ifstream& in, char* str) {
-    for (; *str != '\0'; ++str)
-        if (*str != in.get())
-            return false;
-    return true;
+	for (; *str != '\0'; ++str)
+		if (*str != in.get())
+			return false;
+	return true;
 }
 
 unsigned int Abs(int x) { // because the result is compared to an unsigned int. unsigned int are introduced by size() functions, that return size_t, which is defined to be unsigned. 
@@ -158,17 +160,17 @@ unsigned int Abs(int x) { // because the result is compared to an unsigned int. 
 /// <param name="i"></param>
 /// <returns></returns>
 unsigned int v2l(int i) { // maps a literal as it appears in the cnf to literal
-	if (i < 0) return ((-i) << 1) - 1; 
+	if (i < 0) return ((-i) << 1) - 1;
 	else return i << 1; // shift left by 1 = *2
-} 
+}
 /// <summary>
 /// Literal to variable -> opposite of v2l()
 /// </summary>
 /// <param name="l"></param>
 /// <returns></returns>
 Var l2v(Lit l) {
-	return (l+1) / 2;	
-} 
+	return (l + 1) / 2;
+}
 /// <summary>
 /// Neg(l) is a macro that check if l is odd or even
 /// check last bit of number, l & 1 -> right most bit is 1 -> number is odd, rightmost bit is 0 -> number is even
@@ -180,7 +182,7 @@ Var l2v(Lit l) {
 /// <returns></returns>
 Lit negate(Lit l) {
 	if (Neg(l)) return l + 1;  // odd
-	return l - 1;	
+	return l - 1;
 }
 /// <summary>
 /// Literal to real Literal
@@ -188,40 +190,41 @@ Lit negate(Lit l) {
 /// <param name="l"></param>
 /// <returns></returns>
 int l2rl(int l) {
-	return Neg(l)? -((l + 1) / 2) : l / 2;
+	return Neg(l) ? -((l + 1) / 2) : l / 2;
 }
 
 
-/********** classes ******/ 
+/********** classes ******/
 
 class Clause {
 	clause_t c; // vector of literals
-	int lw,rw; //watchers - points to literals that are not false at the moment
-public:	
-	Clause(){};
-	void insert(int i) {c.push_back(i);} // add literal to clause, push_back() - function from standard library dds a new element at the end of the vector
-	void lw_set(int i) {lw = i; /*assert(lw != rw);*/} // set left watch
-	void rw_set(int i) {rw = i; /*assert(lw != rw);*/}	// set right watch
-	clause_t& cl() {return c;}
-	int get_lw() {return lw;}
-	int get_rw() {return rw;}
-	int get_lw_lit() {return c[lw];}
-	int get_rw_lit() {return c[rw];}
-	int  lit(int i) {return c[i];} 		
+	int lw, rw; //watchers - points to literals that are not false at the moment
+public:
+	Clause() {};
+	void insert(int i) { c.push_back(i); } // add literal to clause, push_back() - function from standard library dds a new element at the end of the vector
+	void lw_set(int i) { lw = i; /*assert(lw != rw);*/ } // set left watch
+	void rw_set(int i) { rw = i; /*assert(lw != rw);*/ }	// set right watch
+	clause_t& cl() { return c; }
+	int get_lw() { return lw; }
+	int get_rw() { return rw; }
+	int get_lw_lit() { return c[lw]; }
+	int get_rw_lit() { return c[rw]; }
+	int  lit(int i) { return c[i]; }
 	inline ClauseState next_not_false(bool is_left_watch, Lit other_watch, bool binary, int& loc); // in BCP, when a literal that watcher is pointing to turned false we need to change the watcher to point on another literal that is not false
 	// next_not_false() is looking for the next literal that is not false,if it finds such literals, it updates the watcher pointer, returns ClauseState
 	// int& loc = index of watcher's new location; by reference
-	size_t size() {return c.size();}
-	void reset() { c.clear(); }	
-	void print() {for (clause_it it = c.begin(); it != c.end(); ++it) {cout << *it << " ";}; }
+	size_t size() { return c.size(); }
+	void reset() { c.clear(); }
+	void print() { for (clause_it it = c.begin(); it != c.end(); ++it) { cout << *it << " "; }; }
 	void print_real_lits() {
-		Lit l; 
-		cout << "("; 
-		for (clause_it it = c.begin(); it != c.end(); ++it) { 
-			l = l2rl(*it); 
-			cout << l << " ";} cout << ")"; 
+		Lit l;
+		cout << "(";
+		for (clause_it it = c.begin(); it != c.end(); ++it) {
+			l = l2rl(*it);
+			cout << l << " ";
+		} cout << ")";
 	}
-	void print_with_watches() {		
+	void print_with_watches() {
 		for (clause_it it = c.begin(); it != c.end(); ++it) {
 			cout << l2rl(*it);
 			int j = distance(c.begin(), it); //also could write "int j = i - c.begin();"  : the '-' operator is overloaded to allow such things. but distance is more standard, as it works on all standard containers.
@@ -263,11 +266,11 @@ class Solver {
 	map<clause_t, int> lbd_score_map;
 	map<clause_t, double> activity_score_map;
 	map<clause_t, double> score_map;
-    map<int, clause_t> deletion_candidates; // learnt clauses indices, that are NOT asserting
-    map<int, double> clauseIndx_score_map;
-    map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => var => For variables that their value was assigned in BCP, this is the clause that gave this variable its value.
+	map<int, clause_t> deletion_candidates; // learnt clauses indices, that are NOT asserting
+	map<int, double> clauseIndx_score_map;
+	map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => vars => For variables that their value was assigned in BCP, this is the clause that gave this variable its value.
 	vector<int> last_deleted_idx; // indices that were deleted on last dynamic reset (15.02.2021 update)
-    /* end of our helper data structures*/
+	/* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
 	vector<double>	m_activity; // Var => activity
@@ -281,9 +284,9 @@ class Solver {
 		nlits,			// # literals = 2*nvars				
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
 		num_conflicts, // number of conflicts that we saw
-        num_deletion; // number of times we deleted half of the clauses
-	int					
-		num_learned, 	
+		num_deletion; // number of times we deleted half of the clauses
+	int
+		num_learned,
 		num_decisions,
 		num_assignments,
 		num_restarts,
@@ -297,7 +300,7 @@ class Solver {
 	Lit 		asserted_lit; // last literal that got an assignment ( true of false )
 
 	float restart_multiplier;
-	
+
 	// access	
 	int get_learned() { return num_learned; }
 	void set_nvars(int x) { nvars = x; }
@@ -311,7 +314,7 @@ class Solver {
 
 	void reset(); // initialization that is invoked initially + every restart
 	void initialize();
-	void reset_iterators(double activity_key = 0.0);	
+	void reset_iterators(double activity_key = 0.0);
 
 	// solving	
 	SolverState decide();
@@ -322,49 +325,47 @@ class Solver {
 	void increaseVariableActivityScore(Var v);
 	bool isAssertingClause(clause_t clause, int conflict_level);
 	void updateLBDscore(clause_t clause);
-	int LBD_score_calculation(clause_t clause); 
-	double clause_activity_calculation(clause_t clause); 
+	int LBD_score_calculation(clause_t clause);
+	double clause_activity_calculation(clause_t clause);
 	double clause_score_calculation(clause_t clause);
-    vector<pair<int, double>> sort_conflict_clauses_by_score();
-    void updateIndicesInWatches(int clause_index, int recalculated_index);
-    void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
+	vector<pair<int, double>> sort_conflict_clauses_by_score();
+	void updateIndicesInWatches(int clause_index, int recalculated_index);
+	void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
 	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
-
-	vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> sorted_conflict_clauses);
+	vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
 
 	// those 4 function is equvivalent of deleteHalfLeanrtClauses()
 	map <int, int> index_recalculation_map_creation(vector<pair<int, double>> vec);
-	vector<int> deletion_candidates_creation(map <int, int>& index_recalculation_map);
-	void watchers_and_antecedent_update(map <int, int> index_recalculation_map);
+	vector<int> deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map);
+	void update_maps_watchers_antecedents(map <int, int> index_recalculation_map);
 	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
+	int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
 
-    int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
-	void dynamic_restart();
 
-	
+
 	/*end of our helper methods*/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
 	inline void add_unary_clause(Lit l);
-	inline void assert_lit(Lit l);	
+	inline void assert_lit(Lit l);
 	void m_rescaleScores(double& new_score);
 	inline void backtrack(int k);
 	void restart();
-	
+
 	// scores	
 	inline void bumpVarScore(int idx);
 	inline void bumpLitScore(int lit_idx);
 
 public:
-	Solver(): 
-		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0), 
-		num_restarts(0), m_var_inc(1.0), qhead(0), 
+	Solver() :
+		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
+		num_restarts(0), m_var_inc(1.0), qhead(0),
 		/* our helping variables */
 		num_conflicts(0), num_deletion(0),
 		/*    */
-		restart_threshold(Restart_lower), restart_lower(Restart_lower), 
-		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
-	
+		restart_threshold(Restart_lower), restart_lower(Restart_lower),
+		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier) {};
+
 	// service functions
 	inline LitState lit_state(Lit l) {
 		VarState var_state = state[l2v(l)];
@@ -378,42 +379,77 @@ public:
 	SolverState _solve();
 	void solve();
 
-	
-	
-	
-// debugging
-	void print_cnf(){
-		for(vector<Clause>::iterator i = cnf.begin(); i != cnf.end(); ++i) {
-			i -> print_with_watches(); 
+
+
+
+	// debugging
+	void print_cnf() {
+		for (vector<Clause>::iterator i = cnf.begin(); i != cnf.end(); ++i) {
+			i->print_with_watches();
 			cout << endl;
 		}
-	} 
+	}
 
 	void print_real_cnf() {
-		for(vector<Clause>::iterator i = cnf.begin(); i != cnf.end(); ++i) {
-			i -> print_real_lits(); 
+		for (vector<Clause>::iterator i = cnf.begin(); i != cnf.end(); ++i) {
+			i->print_real_lits();
 			cout << endl;
 		}
-	} 
+	}
 
-	void print_state(const char *file_name) {
+	void print_state(const char* file_name) {
 		ofstream out;
-		out.open(file_name);		
-		out << "State: "; 
+		out.open(file_name);
+		out << "State: ";
 		for (vector<VarState>::iterator it = state.begin() + 1; it != state.end(); ++it) {
 			char sign = (*it) == VarState::V_FALSE ? -1 : (*it) == VarState::V_TRUE ? 1 : 0;
 			out << sign * (it - state.begin()) << " "; out << endl;
 		}
-	}	
+	}
 
 	void print_state() {
-		cout << "State: "; 
+		cout << "State: ";
 		for (vector<VarState>::iterator it = state.begin() + 1; it != state.end(); ++it) {
 			char sign = (*it) == VarState::V_FALSE ? -1 : (*it) == VarState::V_TRUE ? 1 : 0;
 			cout << sign * (it - state.begin()) << " "; cout << endl;
 		}
-	}	
-	
+	}
+
+	void print_cnf_state() {
+		cout << "CNF State: " << endl;
+		cout << "CNF size: " << cnf.size() << endl;
+		for (int i = 0; i < cnf.size(); i++) {
+			cout << i << ") ";
+			cnf[i].print_real_lits();
+			cout << endl;
+		}
+	}
+
+    void print_antecedents() {
+        cout << "Antecedents: " << endl;
+        for (int i = 0; i < antecedent.size(); i++) {
+            if(antecedent[i]!=-1) {
+                cout << "ant[" <<  i << "] =  " << antecedent[i] << ";\t";
+                cout << "rev_ant[ " <<  antecedent[i] << " ] \t= \t{";
+                for(int j : reversed_antecedent[antecedent[i]]) {
+                    cout << j << ", ";
+                }
+                cout << "}" << endl;
+            }
+        }
+
+        for (int i = 0; i < cnf.size(); i++) {
+            if(reversed_antecedent[i].size()) {
+                cout << "clause " << i << " is antesedent for : (";
+                for (int j = 0; j < reversed_antecedent[i].size(); j++) {
+                    cout << reversed_antecedent[i][j] << ",";
+                }
+                cout << ")" << endl;
+            }
+
+        }
+    }
+
 	void print_watches() {
 		for (vector<vector<int> >::iterator it = watches.begin() + 1; it != watches.end(); ++it) {
 			cout << distance(watches.begin(), it) << ": ";
@@ -426,17 +462,16 @@ public:
 	};
 
 
-	void print_stats() {cout << endl << "Statistics: " << endl << "===================" << endl << 
-		"### Restarts:\t\t" << num_restarts << endl <<
-        "### Dynamic restarts:\t\t" << num_deletion << endl <<
-        "### Conflicts:\t\t" << num_conflicts << endl <<
-		"### Learned-clauses:\t" << num_learned << endl <<
-		"### Decisions:\t\t" << num_decisions << endl <<
-		"### Implications:\t" << num_assignments - num_decisions << endl <<
-		"### Time:\t\t" << cpuTime() - begin_time << endl;
+	void print_stats() {
+		cout << endl << "Statistics: " << endl << "===================" << endl <<
+			"### Restarts:\t\t" << num_restarts << endl <<
+			"### Dynamic restarts:\t\t" << num_deletion << endl <<
+			"### Conflicts:\t\t" << num_conflicts << endl <<
+			"### Learned-clauses:\t" << num_learned << endl <<
+			"### Decisions:\t\t" << num_decisions << endl <<
+			"### Implications:\t" << num_assignments - num_decisions << endl <<
+			"### Time:\t\t" << cpuTime() - begin_time << endl;
 	}
-	
+
 	void validate_assignment();
 };
-
-
