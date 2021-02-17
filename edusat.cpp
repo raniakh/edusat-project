@@ -461,8 +461,14 @@ SolverState Solver::BCP() {
 				*	for each variable:
 				*		if antecedent is a glue clause then increase variable's score
 				*/
+
+				if (c.size() == 2) {
+					if (verbose_now()) cout << "activity score += 5 for variable " << l2v(other_watch) << endl;
+					increaseVariableActivityScore(l2v(other_watch));
+				}
+
 				// this block is wrong, propagated is only other watch
-				if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - before for" << endl;
+				/*if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - before for" << endl;
 				c.print_real_lits();cout<<""<<endl;
 				for (clause_it it = c.cl().begin(); it != c.cl().end(); ++it) { 
 					if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - after for" << endl;
@@ -478,7 +484,7 @@ SolverState Solver::BCP() {
 							increaseVariableActivityScore(v);
 						} antecedent_clause.print_real_lits();
 					} // if(ant != -1)
-				}// ours end
+				}// ours end */
 				break;
 			}
 			default: // replacing watch_lit
