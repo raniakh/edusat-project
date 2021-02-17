@@ -1,12 +1,8 @@
 ﻿  edusat.cpp
 C:\Users\rania\source\repos\edusat\edusat\edusat.h(417,21): warning C4018: '<': signed/unsigned mismatch
 C:\Users\rania\source\repos\edusat\edusat\edusat.h(426,21): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.h(437,21): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.h(440,23): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(747,27): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(775,22): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(795,23): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(844,20): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(865,42): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(881,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(787,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(862,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(883,42): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(899,20): warning C4018: '<': signed/unsigned mismatch
   edusat.vcxproj -> C:\Users\rania\source\repos\edusat\Debug\edusat.exe

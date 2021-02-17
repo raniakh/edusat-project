@@ -426,15 +426,15 @@ public:
 		for (int i = 0; i < antecedent.size(); i++) {
 			if (antecedent[i] != -1) {
 				cout << "ant[" << i << "] =  " << antecedent[i] << ";\t";
-				cout << "rev_ant[ " << antecedent[i] << " ] \t= \t{";
+				/*cout << "rev_ant[ " << antecedent[i] << " ] \t= \t{";
 				for (int j : reversed_antecedent[antecedent[i]]) {
 					cout << j << ", ";
 				}
-				cout << "}" << endl;
+				cout << "}" << endl;*/
 			}
 		}
 
-		for (int i = 0; i < cnf.size(); i++) {
+		/*for (int i = 0; i < cnf.size(); i++) {
 			if (reversed_antecedent[i].size()) {
 				cout << "clause " << i << " is antesedent for : (";
 				for (int j = 0; j < reversed_antecedent[i].size(); j++) {
@@ -443,7 +443,7 @@ public:
 				cout << ")" << endl;
 			}
 
-		}
+		}*/
 	}
 	
 	void print_watches() {

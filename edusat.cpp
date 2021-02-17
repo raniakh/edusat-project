@@ -439,6 +439,8 @@ SolverState Solver::BCP() {
 				cout <<"antecedent["<<l2v(other_watch)<<"] = " <<*it <<endl;
 				// ours start
 				cout<<"other_watch literal is" <<l2rl(other_watch )<<endl;
+
+				/* RANIA DELETE REVERSED ANTECEDENT
 				if(reversed_antecedent.find(*it)!=reversed_antecedent.end()) {
 					if (count(reversed_antecedent[*it].begin(), reversed_antecedent[*it].end(), l2v(other_watch))) {
 						cout << "clause " << *it << "is already antecedent of var " << l2v(other_watch) << endl;
@@ -449,6 +451,7 @@ SolverState Solver::BCP() {
                 } else{
 					reversed_antecedent.insert(pair<int, vector<Var>>(*it, { l2v(other_watch) }));
 				}
+				*/
 				// ours end
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
 				//ours start
@@ -735,19 +738,28 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 
 int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses) {
     // Returns the earliest decision level at witch all variables, that were propagated will have not deleted antecedents
+	// to_be_deleted_clauses has indices of clauses
     // implemented reverse antecedents: clause index => var that got value from clause)
 	if (verbose_now()) cout << " get_dynamic_restart_backtracking_level() " << endl;
     int size = to_be_deleted_clauses.size();
     int min_level = dl;
     for(int i=0; i<size; i++){
-        int clause = to_be_deleted_clauses[i];
+        int clause_idx = to_be_deleted_clauses[i];
+		// Checking that clause is antecedent for some variable
+		auto it = find(antecedent.begin(), antecedent.end(), clause_idx);
+		if (it != antecedent.end()) {
+			Var var = it - antecedent.begin();
+			min_level = min(min_level, dlevel[var] - 1);
+		}
+
+		/*
         // Checking that clause is antecedent for some variable
-        if(reversed_antecedent.find(clause)!=reversed_antecedent.end()){
+        if(reversed_antecedent.find(clause_idx)!=reversed_antecedent.end()){
             vector<Var> vars = reversed_antecedent[to_be_deleted_clauses[i]];
             for(int j=0; j<vars.size(); j++){
                 min_level = min(min_level,dlevel[vars[j]]-1);
             }
-        }
+        }*/
     }
     return max(min_level,0);
 }
@@ -789,6 +801,12 @@ void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_inde
 	// map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => vars
 	if (clause_index == recalculated_index) return; // nothing to do
 	else {
+		auto it = std::find(antecedent.begin(), antecedent.end(), clause_index);
+		if (it != antecedent.end()) {
+			std::replace(antecedent.begin(), antecedent.end(), clause_index, recalculated_index);
+		}
+	}
+	/*else {
 		if (reversed_antecedent.find(clause_index) != reversed_antecedent.end()) { // if clause is antecedent for some variables 
 			if (!reversed_antecedent[clause_index].empty()) {
 				vector<Var> vars = reversed_antecedent[clause_index];
@@ -806,7 +824,7 @@ void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_inde
 			auto pos = reversed_antecedent.find(clause_index);
 			reversed_antecedent.erase(pos);
 		}	
-	}
+	}*/
 }
 
 map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>> sorted_conflict_clauses) {
@@ -879,8 +897,8 @@ vector<int> Solver::cnf_update(vector <int> clauses_to_be_deleted) {
 	// Cnf update 
 	sort(clauses_to_be_deleted.begin(), clauses_to_be_deleted.end());
 	for (int i = 0; i < clauses_to_be_deleted.size(); i++) {
-		if (verbose_now()) cout << "errasing from cnf of size = " << cnf.size() << endl << " clauses_to_delete[i] = "
-			<< clauses_to_be_deleted[i] << "clauses_to_delete[i]-i = " << clauses_to_be_deleted[i] - i << endl;
+		if (verbose_now()) cout << "errasing from cnf of size = " << cnf.size() << endl << " clauses_to_delete["<<i<<"] = "
+			<< clauses_to_be_deleted[i] << "clauses_to_delete["<<i<<"]-" <<i<< " = " << clauses_to_be_deleted[i] - i << endl;
 		cnf.erase(cnf.begin() + (clauses_to_be_deleted[i] - i)); // // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
 	}
 
@@ -934,12 +952,12 @@ void Solver::backtrack(int k) {
 	qhead = trail.size();
 	dl = k;	
 	assert_lit(asserted_lit);
-
 	antecedent[l2v(asserted_lit)] = cnf.size() - 1;
+/*
 	if(reversed_antecedent.find(cnf.size() - 1)!=reversed_antecedent.end()) {
         reversed_antecedent[cnf.size() - 1].push_back(l2v(asserted_lit));
     } else reversed_antecedent.insert(pair<int, vector<Var>>(cnf.size() - 1, { l2v(asserted_lit) }));
-
+	*/
 	conflicting_clause_idx = -1;
 }
 
