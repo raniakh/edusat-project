@@ -330,8 +330,10 @@ class Solver {
 	double clause_score_calculation(clause_t clause);
 	vector<pair<int, double>> sort_conflict_clauses_by_score();
 	void updateIndicesInWatches(int clause_index, int recalculated_index);
-	void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
+	void update_antecedent_and_reversed_antecedent(int clause_index, int recalculated_index);
 	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
+	void updateAntecedent(Var variable, int new_antecedent );
+	void deleteAntecedent(Var variable);
 	vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
 
 	// those 4 function is equvivalent of deleteHalfLeanrtClauses()
@@ -464,13 +466,14 @@ public:
 
 	void print_stats() {
 		cout << endl << "Statistics: " << endl << "===================" << endl <<
-			"### Restarts:\t\t" << num_restarts << endl <<
-			"### Dynamic restarts:\t\t" << num_deletion << endl <<
-			"### Conflicts:\t\t" << num_conflicts << endl <<
-			"### Learned-clauses:\t" << num_learned << endl <<
+			"### Restarts:\t\t\t" << num_restarts << endl <<
+			"### Dynamic restarts:\t\t\t" << num_deletion << endl <<
+			"### Conflicts:\t\t\t" << num_conflicts << endl <<
+			"### Learned-clauses:\t\t" << num_learned << endl <<
 			"### Decisions:\t\t" << num_decisions << endl <<
-			"### Implications:\t" << num_assignments - num_decisions << endl <<
+			"### Implications:\t\t" << num_assignments - num_decisions << endl <<
 			"### Time:\t\t" << cpuTime() - begin_time << endl;
+
 	}
 
 	void validate_assignment();

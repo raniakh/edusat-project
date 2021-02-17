@@ -433,18 +433,19 @@ SolverState Solver::BCP() {
 					cout << "Clause Index = " << *it << " is antecedent for variable " << l2v(other_watch) << endl;
 				}
 				assert_lit(other_watch);
-    				antecedent[l2v(other_watch)] = *it;
-				if (reversed_antecedent.find(*it) != reversed_antecedent.end()) {
-					if (count(reversed_antecedent[*it].begin(), reversed_antecedent[*it].end(), l2v(other_watch))) {
-						cout << "clause " << *it << "is already antecedent of var " << l2v(other_watch) << endl;
-					}
-					else {
-						reversed_antecedent[*it].push_back(l2v(other_watch));
-					}
-				}
-				else {
-					reversed_antecedent.insert(pair<int, vector<Var>>(*it, { l2v(other_watch) }));
-				}
+				updateAntecedent(l2v(other_watch), *it);
+//    				antecedent[l2v(other_watch)] = *it;
+//				if (reversed_antecedent.find(*it) != reversed_antecedent.end()) {
+//					if (count(reversed_antecedent[*it].begin(), reversed_antecedent[*it].end(), l2v(other_watch))) {
+//						cout << "clause " << *it << "is already antecedent of var " << l2v(other_watch) << endl;
+//					}
+//					else {
+//						reversed_antecedent[*it].push_back(l2v(other_watch));
+//					}
+//				}
+//				else {
+//					reversed_antecedent.insert(pair<int, vector<Var>>(*it, { l2v(other_watch) }));
+//				}
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
 
 				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
@@ -456,22 +457,24 @@ SolverState Solver::BCP() {
 				*	for each variable:
 				*		if antecedent is a glue clause then increase variable's score
 				*/
+
+				if (c.size() == 2) {
+					if (verbose_now()) cout << "activity score += 5 for variable " << l2v(other_watch) << endl;
+					increaseVariableActivityScore(l2v(other_watch));
+				}
+
+				// this block is wrong, propagated is only other watch
 				if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - before for" << endl;
+				/*if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - before for" << endl;
+				c.print_real_lits();cout<<""<<endl;
 				for (clause_it it = c.cl().begin(); it != c.cl().end(); ++it) {
 					if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - after for" << endl;
-					Lit lit = *it;
-					Var v = l2v(lit);
-					int ant = antecedent[v];
-					if (verbose_now()) cout << "BCP::propagating:: antecedent[v] = " << ant << endl;
-					if (ant != -1) {
-						Clause antecedent_clause = cnf[ant];
-						if (verbose_now()) cout << "BCP::propagating:: cnf[ant] = " << antecedent_clause.cl().data() << endl;
-						if (antecedent_clause.cl().size() == 2) { // if antecedent is a Glue Clause
-							if (verbose_now()) cout << "activity score += 5 for variable " << v << endl;
+@@ -478,7 +484,7 @@ SolverState Solver::BCP() {
 							increaseVariableActivityScore(v);
-						}
+						} antecedent_clause.print_real_lits();
 					} // if(ant != -1)
-				}
+				}// ours end
+				}// ours end */
 				break;
 			}
 			default: // replacing watch_lit
@@ -774,31 +777,29 @@ void Solver::updateIndicesInWatches(int clause_index, int recalculated_index) {
 	}
 }
 
-void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_index) {
-	if (verbose_now()) cout << " unmarkAntecedentForVariable() clause_index = " << clause_index << " recalculated_index = "
-		<< recalculated_index << endl;
-	// vector<int> antecedent; // var => clause index
-	// map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => vars
-	if (clause_index == recalculated_index) return; // nothing to do
-	else {
-		if (reversed_antecedent.find(clause_index) != reversed_antecedent.end()) { // if clause is antecedent for some variables 
-			if (!reversed_antecedent[clause_index].empty()) {
-				vector<Var> vars = reversed_antecedent[clause_index];
-				for (int j = 0; j < vars.size(); j++) {
-					antecedent[vars[j]] = recalculated_index;
-				}
-				if(reversed_antecedent.find(recalculated_index)!=reversed_antecedent.end()) {
-				    auto pos = reversed_antecedent.find(recalculated_index);
-                    reversed_antecedent.erase(pos);
+void Solver::update_antecedent_and_reversed_antecedent(int clause_index, int recalculated_index) {
+    if (verbose_now())
+        cout << " update_antecedent_and_reversed_antecedent() clause_index = " << clause_index
+             << " recalculated_index = "
+             << recalculated_index << endl;
+    // vector<int> antecedent; // var => clause index
+    // map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => vars
+    if (clause_index == recalculated_index) return; // nothing to do
+    else {
+        if (reversed_antecedent.find(clause_index) !=
+            reversed_antecedent.end()) { // if clause is antecedent for some variables
+            if (!reversed_antecedent[clause_index].empty()) {
+                vector<Var> vars = reversed_antecedent[clause_index];
+                for (int j = 0; j < vars.size(); j++) {
+                    updateAntecedent(vars[j], recalculated_index);
                 }
-				if(recalculated_index != -1)  reversed_antecedent.insert(pair<int, vector<int>>(recalculated_index, vars));
-				
-			}
-			// delete clause from reversed_antecedent if index changed
-            auto pos = reversed_antecedent.find(clause_index);
-			reversed_antecedent.erase(pos);
-		}
-	}
+            } else {
+                // delete clause from reversed_antecedent if it was already empty
+                auto pos = reversed_antecedent.find(clause_index);
+                reversed_antecedent.erase(pos);
+            }
+        }
+    }
 }
 
 map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>> sorted_conflict_clauses) {
@@ -854,15 +855,17 @@ void Solver::update_maps_watchers_antecedents(map <int, int> index_recalculation
 	// Watches and Atecendents update
 	for (int clause_index = 0; clause_index < cnf.size(); clause_index++) {
 		int recalculated_index = index_recalculation_map[clause_index];
-		if (recalculated_index == -1) {
+		if(recalculated_index != clause_index) {
+            if (recalculated_index == -1) {
 
-            lbd_score_map.erase(lbd_score_map.find(cnf[clause_index].cl()));
-            activity_score_map.erase(activity_score_map.find(cnf[clause_index].cl()));
-            score_map.erase(score_map.find(cnf[clause_index].cl()));
-		}
-		updateClauseIndx_score_map(clause_index, recalculated_index);
-		updateIndicesInWatches(clause_index, recalculated_index);
-		unmarkAntecedentForVariable(clause_index, recalculated_index);
+                lbd_score_map.erase(lbd_score_map.find(cnf[clause_index].cl()));
+                activity_score_map.erase(activity_score_map.find(cnf[clause_index].cl()));
+                score_map.erase(score_map.find(cnf[clause_index].cl()));
+            }
+            updateClauseIndx_score_map(clause_index, recalculated_index);
+            updateIndicesInWatches(clause_index, recalculated_index);
+            update_antecedent_and_reversed_antecedent(clause_index, recalculated_index);
+        }
 	}
 }
 
@@ -928,37 +931,20 @@ void Solver::backtrack(int k) {
 	dl = k;
 	assert_lit(asserted_lit);
 
-	if(antecedent[l2v(asserted_lit)]!=-1){
-//        auto position = std::find(reversed_antecedent[antecedent[l2v(asserted_lit)]].begin(), reversed_antecedent[antecedent[l2v(asserted_lit)]].end(), l2v(asserted_lit));
-//        reversed_antecedent[antecedent[l2v(asserted_lit)]].erase(position);
-        if(reversed_antecedent[antecedent[l2v(asserted_lit)]].size() < 2) { // 0 or 1
-            reversed_antecedent.erase(antecedent[l2v(asserted_lit)]);
-        }
-        else{
-            auto position = std::find(reversed_antecedent[antecedent[l2v(asserted_lit)]].begin(), reversed_antecedent[antecedent[l2v(asserted_lit)]].end(), l2v(asserted_lit));
-            reversed_antecedent[antecedent[l2v(asserted_lit)]].erase(position);
-            reversed_antecedent[antecedent[ cnf.size() - 1]].push_back(l2v(asserted_lit));
-        }
-	}
-	else {
-        antecedent[l2v(asserted_lit)] = cnf.size() - 1;
-        reversed_antecedent.insert(pair<int, vector<Var>>(cnf.size()-1,{l2v(asserted_lit)}));
-    }
 
-	conflicting_clause_idx = -1;
+	updateAntecedent(l2v(asserted_lit), cnf.size() - 1);
+	cout << "clause " << cnf.size() - 1 << " = " ;
+    cnf[cnf_size()-1].print_real_lits();
+    cout << endl;
+
+
 	for(int i=0; i<state.size();i++){
 	    if(state[i]==VarState::V_UNASSIGNED){
-	        if(reversed_antecedent[antecedent[i]].size() < 2) { // 0 or 1
-                auto position = reversed_antecedent.find(antecedent[i]);
-                if (position != reversed_antecedent.end()) reversed_antecedent.erase(position);
-            }
-            auto position2 = std::find(reversed_antecedent[antecedent[i]].begin(), reversed_antecedent[antecedent[i]].end(), i);
-            if (position2 != reversed_antecedent[antecedent[i]].end()) { // == myVector.end() means the element was not found
-                reversed_antecedent[antecedent[i]].erase(position2);
-            }
-            antecedent[i]=-1;
+	        if(antecedent[i]!= -1)
+	            deleteAntecedent(i);
 	    }
 	}
+    conflicting_clause_idx = -1;
 }
 
 void Solver::validate_assignment() {
@@ -1050,10 +1036,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 			/* place for clauses deletion */
-            if(antecedent[52]==164){
-                cout << "check" << endl;
-            }
-			if (num_conflicts > 10 + 4 * num_deletion) {	// "dynamic restart"
+			if (num_conflicts > 20000 + 4 * num_deletion) {	// "dynamic restart"
                 cout << "DYNAMIC RESTART START" << endl;
                 print_cnf_state();
                 print_antecedents();
@@ -1080,9 +1063,6 @@ SolverState Solver::_solve() {
                 print_antecedents();
 			}
 			/* place for clauses deletion */
-			if(antecedent[52]==164){
-			    cout << "check" << endl;
-			}
 			res = BCP();
             cout << " BCP IS OVER :" << endl;
             print_antecedents();
@@ -1101,12 +1081,44 @@ SolverState Solver::_solve() {
 	}
 }
 
+void Solver::updateAntecedent(Var variable, int new_antecedent) {
+    int prev_antecedent = antecedent[variable];
+
+    if(verbose_now()){
+        cout << "update antecedent of var " << variable << " from " << prev_antecedent << " to " << new_antecedent << endl;
+    }
+
+    if(prev_antecedent != -1){
+        auto pos = find(reversed_antecedent[prev_antecedent].begin(),reversed_antecedent[prev_antecedent].end(), variable);
+        reversed_antecedent[prev_antecedent].erase(pos);
+        if(reversed_antecedent[prev_antecedent].empty()){
+            reversed_antecedent.erase(prev_antecedent);
+        }
+    }
+    antecedent[variable] = new_antecedent;
+    if(new_antecedent !=- 1) {
+        if (reversed_antecedent.find(variable) == reversed_antecedent.end()) {
+            reversed_antecedent.insert(pair<int, vector<Var>>(new_antecedent, {variable}));
+        } else {
+            reversed_antecedent[new_antecedent].push_back(variable);
+        }
+    }
+}
+
+void Solver::deleteAntecedent(Var variable) {
+    updateAntecedent(variable, -1);
+}
+
 #pragma endregion solving
 
 
 /******************  main ******************************/
 // file start -> p cnf (number of variables) (number of clauses)
 int main(int argc, char** argv) {
+    //std::ofstream out("C:\\Project_path\\PROJECT\\edusat\\out.txt");
+    //std::streambuf* coutbuf = std::cout.rdbuf();
+    //std::cout.rdbuf(out.rdbuf()); // redirect std::cout to out.txt
+
 	begin_time = cpuTime();
 	parse_options(argc, argv);
 
