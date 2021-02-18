@@ -765,6 +765,7 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
 void Solver::updateClauseIndx_score_map(int clause_index, int recalculated_index) {
 	if (verbose_now()) cout << " updateClauseIndx_score_map() clause_index = " << clause_index << " recalculated_index = "
 		<< recalculated_index << endl;
+	if (clause_index == recalculated_index) return;
 	if (recalculated_index == -1) {
 		clauseIndx_score_map.erase(clause_index);
 	}
@@ -781,6 +782,7 @@ void Solver::updateIndicesInWatches(int clause_index, int recalculated_index) {
     //vector<vector<int> > watches;  // Lit => vector of clause indices into CNF
 	if (verbose_now()) cout << " deleteLearntClauseFromWatches() clause_index = " << clause_index << " recalculated_index = " 
 		<< recalculated_index << endl;
+	if (clause_index == recalculated_index) return;
     vector<vector<int>>::iterator row;
     for (int i = 0; i< watches.size(); i++) {
         if (find(watches[i].begin(), watches[i].end(), clause_index) != watches[i].end()) {
