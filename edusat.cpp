@@ -431,9 +431,7 @@ SolverState Solver::BCP() {
 				break; // nothing to do when clause has a satisfied literal.
 			case ClauseState::C_UNIT: { // new implication				
 				if (verbose_now()) cout << "propagating: "<< endl;
-				if (verbose_now()) {
-					cout << "Clause Index = "<< *it <<" is antecedent for literal " << l2rl(negate(NegatedLit)) <<endl;
-				}
+				
 				assert_lit(other_watch);
 				antecedent[l2v(other_watch)] = *it;
 				cout <<"antecedent["<<l2v(other_watch)<<"] = " <<*it <<endl;
@@ -1050,7 +1048,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if (num_conflicts > 10 + 4 * num_deletion) {	// "dynamic restart"
+            if (num_conflicts > 20000 + 500 * num_deletion) {	// "dynamic restart"
 				cout << "dynamic restart" << endl;
 				cout << "antecedents and cnf state before dynamic restart" << endl;
 				print_antecedents();
@@ -1065,12 +1063,13 @@ SolverState Solver::_solve() {
 				last_deleted_idx.clear();
 				last_deleted_idx = clauses_to_be_deleted;
 				//// Watches and Atecendents update
+				int dr_bktrc = get_dynamic_restart_backtracking_level(clauses_to_be_deleted);
 				update_maps_watchers_antecedents(index_recalculation_map);
 
 				//// Cnf update 
 				cnf_update(clauses_to_be_deleted);
                 num_deletion++;
-				int dr_bktrc = get_dynamic_restart_backtracking_level(clauses_to_be_deleted);
+				
 				cout << "backtracking to level: "<< dr_bktrc << endl;
                 backtrack(dr_bktrc);
 				cout << "dynamic restart over" << endl;
