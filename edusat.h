@@ -174,13 +174,13 @@ Var l2v(Lit l) {
 /// <summary>
 /// Neg(l) is a macro that check if l is odd or even
 /// check last bit of number, l & 1 -> right most bit is 1 -> number is odd, rightmost bit is 0 -> number is even
-/// negate(Lit l) :
+/// negate_(Lit l) :
 /// if literal is odd meaning variable is negative then return l+1, 
-/// negate(5)=6, negate(6) = 5
+/// negate(5)=6, negate_(6) = 5
 /// </summary>
 /// <param name="l"></param>
 /// <returns></returns>
-Lit negate(Lit l) {
+Lit negate_(Lit l) {
 	if (Neg(l)) return l + 1;  // odd
 	return l - 1;
 }
@@ -284,7 +284,7 @@ class Solver {
 		nlits,			// # literals = 2*nvars				
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
 		num_conflicts, // number of conflicts that we saw
-		num_deletion; // number of times we deleted half of the clauses
+		num_dynamic_restarts; // number of times we deleted half of the clauses
 	int
 		num_learned,
 		num_decisions,
@@ -321,39 +321,46 @@ class Solver {
 	void test();
 	SolverState BCP();
 	int  analyze(const Clause);
-	/* our helper methods */
-	void increaseVariableActivityScore(Var v);
-	bool isAssertingClause(clause_t clause, int conflict_level);
+
+	/************************** O U R   M E T H O D S ************************/
+
+	/* Antecedents */
+	void updateAntecedent(Var variable, int new_antecedent);
+	void deleteAntecedent(Var variable);
+
+	/* Scores */
 	void updateLBDscore(clause_t clause);
 	int LBD_score_calculation(clause_t clause);
+
+	void increaseVariableActivityScore(Var v);
 	double clause_activity_calculation(clause_t clause);
+
 	double clause_score_calculation(clause_t clause);
 	vector<pair<int, double>> sort_conflict_clauses_by_score();
-	void updateIndicesInWatches(int clause_index, int recalculated_index);
-	void update_antecedent_and_reversed_antecedent(int clause_index, int recalculated_index);
-	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
-	void updateAntecedent(Var variable, int new_antecedent );
-	void deleteAntecedent(Var variable);
-	vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
 
-	// those 4 function is equvivalent of deleteHalfLeanrtClauses()
+	/* Dynamic backtrack preparation */
+	bool isAssertingClause(clause_t clause, int conflict_level);
 	map <int, int> index_recalculation_map_creation(vector<pair<int, double>> vec);
 	vector<int> deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map);
 	void update_maps_watchers_antecedents(map <int, int> index_recalculation_map);
 	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
-	int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
 
-	
+	/* Maps update */
+	void updateIndicesInWatches(int clause_index, int recalculated_index);
+	void update_antecedent_and_reversed_antecedent(int clause_index, int recalculated_index);
+	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
+
+	/* Dynamic backtrack */
+	int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
 	void dynamic_backtrack(int k);
 
-	bool compare_clauses(clause_t cl1, clause_t cl2);
 
-	/*end of our helper methods*/
+	/******************** E N D   O F   O U R   M E T H O D S ***********************/
 	inline int  getVal(Var v);
 	inline void add_clause(Clause& c, int l, int r);
 	inline void add_unary_clause(Lit l);
 	inline void assert_lit(Lit l);
-	void m_rescaleScores(double& new_score);
+	void m_rescaleScores(double& new_score, bool rescale);
 	inline void backtrack(int k);
 	void restart();
 
@@ -366,7 +373,7 @@ public:
 		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
 		num_restarts(0), m_var_inc(1.0), qhead(0),
 		/* our helping variables */
-		num_conflicts(0), num_deletion(0),
+		num_conflicts(0), num_dynamic_restarts(0),
 		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower),
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier) {};
@@ -388,9 +395,27 @@ public:
 
 
 	// debugging
+	bool compare_clauses(clause_t cl1, clause_t cl2) {
+		if (cl1.size() != cl2.size()) return false;
+		for (int i = 0; i < cl1.size(); i++) {
+			if (cl1[i] != cl2[i]) return false;
+		}
+		return true;
+	}
+
 	void print_cnf() {
 		for (vector<Clause>::iterator i = cnf.begin(); i != cnf.end(); ++i) {
 			i->print_with_watches();
+			cout << endl;
+		}
+	}
+
+	void print_cnf_state() {
+		cout << "CNF State: " << endl;
+		cout << "CNF size: " << cnf.size() << endl;
+		for (int i = 0; i < cnf.size(); i++) {
+			cout << i << ") ";
+			cnf[i].print_real_lits();
 			cout << endl;
 		}
 	}
@@ -420,16 +445,6 @@ public:
 		}
 	}
 
-	void print_cnf_state() {
-		cout << "CNF State: " << endl;
-		cout << "CNF size: " << cnf.size() << endl;
-		for (int i = 0; i < cnf.size(); i++) {
-			cout << i << ") ";
-			cnf[i].print_real_lits();
-			cout << endl;
-		}
-	}
-
 	void print_lbd_score() {
 		cout << "LBD scores: " << endl;
 		for (int i = 0; i < cnf.size(); i++) {
@@ -437,8 +452,6 @@ public:
 			cout << LBD_score_calculation(cnf[i].cl()) << endl;
 		}
 	}
-
-	
 
     void print_antecedents() {
         cout << "Antecedents: " << endl;
@@ -476,11 +489,10 @@ public:
 		}
 	};
 
-
 	void print_stats() {
 		cout << endl << "Statistics: " << endl << "===================" << endl <<
-			"### Restarts:\t\t\t" << num_restarts << endl <<
-			"### Dynamic restarts:\t\t\t" << num_deletion << endl <<
+			"### Local restarts:\t\t\t" << num_restarts << endl <<
+			"### Dynamic restarts:\t\t\t" << num_dynamic_restarts << endl <<
 			"### Conflicts:\t\t\t" << num_conflicts << endl <<
 			"### Learned-clauses:\t\t" << num_learned << endl <<
 			"### Decisions:\t\t" << num_decisions << endl <<
