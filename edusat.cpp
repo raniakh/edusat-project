@@ -253,7 +253,7 @@ SolverState Solver::decide(){
 		if (m_Score2Vars_it == m_Score2Vars.end()) break; 
 		while (true) { // scores from high to low
 			while (m_VarsSameScore_it != m_Score2Vars_it->second.end()) { 
-				v = *m_VarsSameScore_it;
+				v = *m_VarsSameScore_it;				
 				++m_VarsSameScore_it;
 				++cnt;
 				if (state[v] == VarState::V_UNASSIGNED) { // found a var to assign
@@ -264,7 +264,9 @@ SolverState Solver::decide(){
 				}
 			}
 			++m_Score2Vars_it;
+			update_m_Score2Vars_map(); // ATTENTION DO NOT TOUCH
 			if (m_Score2Vars_it == m_Score2Vars.end()) break;
+
 			m_VarsSameScore_it = m_Score2Vars_it->second.begin();
 		}
 		break;
@@ -630,46 +632,52 @@ int Solver::analyze(const Clause conflicting) {
 	return bktrk; 
 }
 
+void Solver::update_m_Score2Vars_map() {
+	if (updatedActivityScores_map.empty()) {
+		return;
+	}
+
+	for (auto &it : updatedActivityScores_map) {
+		Var v = it.first;
+		double score = it.second;
+		updateVariableActivityScore(v, score);
+	}
+	updatedActivityScores_map.clear();
+
+}
+
 void Solver::increaseVariableActivityScore(Var v) {
-	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
+	double score;
+	if (updatedActivityScores_map.find(v) == updatedActivityScores_map.end())
+	{
+		score = m_activity[v] + 5;
+		updatedActivityScores_map.insert(pair<Var, double>(v, score));
+	}
+	else {
+		updatedActivityScores_map[v] += 5;
+	}
+}
+
+void Solver::updateVariableActivityScore(Var v, double new_score) {
+	if (verbose_now()) cout << " updateVariableActivityScore() Var v = " << v << endl;
 	double tmp_score = m_activity[v];
 
-	//if (m_VarsSameScore_it != m_Score2Vars_it->second.end())//BUG
-	//{ 
-	//	if(*m_VarsSameScore_it == v){
-	//		m_VarsSameScore_it = m_Score2Vars_it->second.begin();
-	//	}
-	//}
-	if (m_Score2Vars_it != m_Score2Vars.end()) {
-		m_VarsSameScore_it = m_Score2Vars_it->second.begin(); 
-	}
+// if end -> not intresting , if points to score with size=0 -> ++
 	
 	m_Score2Vars[m_activity[v]].erase(v);	
-	m_activity[v] += 5;
+	m_activity[v] = new_score; 
 	if (m_Score2Vars.find(m_activity[v]) != m_Score2Vars.end()) {
 		m_Score2Vars[m_activity[v]].insert(v);
 	}
 	else {
 		m_Score2Vars[m_activity[v]] = unordered_set<int>({ v });
 	}
-	if (m_Score2Vars[tmp_score].size() == 0 && m_Score2Vars_it->first == tmp_score) {
-		if (m_Score2Vars_it->second.size() == 0) {
-			++m_Score2Vars_it;	
+	if (m_Score2Vars[tmp_score].size() == 0) {
+		if (m_Score2Vars_it->first == tmp_score) {
+			++m_Score2Vars_it;
 		}	
 		m_Score2Vars.erase(tmp_score);
-		if (m_Score2Vars_it == m_Score2Vars.end()) {
-			--m_Score2Vars_it; // not sure leave or keep, keep for now
-			return;
-		}
-		else {
-			m_VarsSameScore_it = m_Score2Vars_it->second.begin();
-		}
 	}
-
-	//if (m_VarsSameScore_it != m_Score2Vars_it->second.end())//BUG
-	//{
-	//	cout << "************* increaseVariableActivityScore second if check m_VarsSameScore_it ******************" << endl;
-	//}
 }
 
 bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
@@ -756,7 +764,7 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
     // implemented reverse antecedents: clause index => var that got value from clause)
 	if (verbose_now()) cout << " get_dynamic_restart_backtracking_level() " << endl;
     int size = to_be_deleted_clauses.size();
-    int min_level = dl;
+    int min_level = dl-1;
     for(int i=0; i<size; i++){
         int clause_idx = to_be_deleted_clauses[i];
 		// Checking that clause is antecedent for some variable
@@ -1102,7 +1110,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if (num_curr_dr_conflicts > 10 + 2 * num_deletion) {	// "dynamic restart"
+            if ( num_curr_dr_conflicts > 20000 + 500 * num_deletion && updatedActivityScores_map.empty()) {	// "dynamic restart"
 				if (verbose_now()) {
 					cout << "dynamic restart" << endl;
 					cout << "antecedents and cnf state before dynamic restart" << endl;
@@ -1110,12 +1118,12 @@ SolverState Solver::_solve() {
 					print_antecedents();
 				}
 				//print_cnf_state();
+				recalculateScoreForClauses();
 				vector<pair<int, double>> sorted_conflict_clauses = sort_conflict_clauses_by_score();
 				map <int, int> index_recalculation_map = index_recalculation_map_creation(sorted_conflict_clauses);
 				//// until now index_recalculation_map has only conflict clauses indices. 
 				//// we need to add all cnf indices 
 				//// now we need to change all not deleted clauses 
-				recalculateScoreForClauses();
 				vector <int> clauses_to_be_deleted = deletion_candidates_creation_and_updating_IndexRecalculationMap(index_recalculation_map);
 				//// todo: delete clauses_to_be_deleted. It was created for debugging
 				last_deleted_idx.clear();

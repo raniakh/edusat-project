@@ -267,6 +267,7 @@ class Solver {
     map<int, double> clauseIndx_score_map;
     map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => var => For variables that their value was assigned in BCP, this is the clause that gave this variable its value.
 	vector<int> last_deleted_idx; // indices that were deleted on last dynamic reset (15.02.2021 update)
+	map<Var, double> updatedActivityScores_map;
     /* end of our helper data structures*/
 
 	unordered_set<Var>::iterator m_VarsSameScore_it;
@@ -320,7 +321,9 @@ class Solver {
 	SolverState BCP();
 	int  analyze(const Clause);
 	/* our helper methods */
+	void updateVariableActivityScore(Var v, double new_score);
 	void increaseVariableActivityScore(Var v);
+	void update_m_Score2Vars_map();
 	bool isAssertingClause(clause_t clause, int conflict_level);
 	void updateLBDscore(clause_t clause);
 	int LBD_score_calculation(clause_t clause); 
