@@ -283,7 +283,8 @@ class Solver {
 		nclauses, 		// # clauses
 		nlits,			// # literals = 2*nvars				
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
-		num_conflicts, // number of conflicts that we saw
+		num_total_conflicts, // number of conflicts that we saw throught the whole proccess 
+		num_curr_dr_conflicts, // number of conflicts that we saw after last dynamic restart
 		num_dynamic_restarts; // number of times we deleted half of the clauses
 	int
 		num_learned,
@@ -373,7 +374,7 @@ public:
 		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0),
 		num_restarts(0), m_var_inc(1.0), qhead(0),
 		/* our helping variables */
-		num_conflicts(0), num_dynamic_restarts(0),
+		num_total_conflicts(0), num_curr_dr_conflicts(0), num_dynamic_restarts(0),
 		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower),
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier) {};
@@ -493,7 +494,7 @@ public:
 		cout << endl << "Statistics: " << endl << "===================" << endl <<
 			"### Local restarts:\t\t\t" << num_restarts << endl <<
 			"### Dynamic restarts:\t\t\t" << num_dynamic_restarts << endl <<
-			"### Conflicts:\t\t\t" << num_conflicts << endl <<
+			"### Conflicts:\t\t\t" << num_total_conflicts << endl <<
 			"### Learned-clauses:\t\t" << num_learned << endl <<
 			"### Decisions:\t\t" << num_decisions << endl <<
 			"### Implications:\t\t" << num_assignments - num_decisions << endl <<

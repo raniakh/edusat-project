@@ -403,7 +403,8 @@ SolverState Solver::BCP() {
 
 		//print_watches();
 		if (conflicting_clause_idx >= 0) {
-			num_conflicts++;
+			num_curr_dr_conflicts++;
+			num_total_conflicts++;
 			return SolverState::CONFLICT;
 		}
 		new_watch_list.clear();
@@ -620,7 +621,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 			/* place for clauses deletion */
-			if (num_conflicts > 10 + 4 * num_dynamic_restarts) {	// "dynamic restart"
+			if (num_curr_dr_conflicts > 50 + 10 * num_dynamic_restarts) {	// "dynamic restart"
 				cout << "DYNAMIC RESTART START" << endl;
 				vector<pair<int, double>> sorted_conflict_clauses = sort_conflict_clauses_by_score();
 				map <int, int> index_recalculation_map = index_recalculation_map_creation(sorted_conflict_clauses);
@@ -633,6 +634,7 @@ SolverState Solver::_solve() {
 				cnf_update(clauses_to_be_deleted);
 				dynamic_backtrack(dr_bktrc);
 				num_dynamic_restarts++;
+				num_curr_dr_conflicts = 0;
 				cout << "DYNAMIC RESTART " << num_dynamic_restarts << " OVER" << endl;
 				//print_state();
 				//print_antecedents();
