@@ -280,7 +280,8 @@ class Solver {
 		nclauses, 		// # clauses
 		nlits,			// # literals = 2*nvars				
 		qhead,			// index into trail. Used in BCP() to follow the propagation process.
-		num_conflicts, // number of conflicts that we saw
+		num_total_conflicts, // number of conflicts that we saw
+		num_curr_dr_conflicts,
         num_deletion; // number of times we deleted half of the clauses
 	int					
 		num_learned, 	
@@ -325,7 +326,8 @@ class Solver {
 	int LBD_score_calculation(clause_t clause); 
 	double clause_activity_calculation(clause_t clause); 
 	double clause_score_calculation(clause_t clause);
-    vector<pair<int, double>> sort_conflict_clauses_by_score();
+	void recalculateScoreForClauses();
+	vector<pair<int, double>> sort_conflict_clauses_by_score();
     void updateIndicesInWatches(int clause_index, int recalculated_index);
     void unmarkAntecedentForVariable(int clause_index, int recalculated_index);
 	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
@@ -336,7 +338,9 @@ class Solver {
 	vector<int> deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map);
 	void update_maps_watchers_antecedents(map <int, int> index_recalculation_map);
 	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
+	void dynamic_backtrack(int k);
     int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
+	void deleteAntecedent(Var variable);
 
 
 
@@ -358,7 +362,7 @@ public:
 		nvars(0), nclauses(0), num_learned(0), num_decisions(0), num_assignments(0), 
 		num_restarts(0), m_var_inc(1.0), qhead(0), 
 		/* our helping variables */
-		num_conflicts(0), num_deletion(0),
+		num_total_conflicts(0), num_curr_dr_conflicts(0), num_deletion(0),
 		/*    */
 		restart_threshold(Restart_lower), restart_lower(Restart_lower), 
 		restart_upper(Restart_upper), restart_multiplier(Restart_multiplier)	 {};
@@ -425,7 +429,7 @@ public:
 		cout << "Antecedents: " << endl;
 		for (int i = 0; i < antecedent.size(); i++) {
 			if (antecedent[i] != -1) {
-				cout << "ant[" << i << "] =  " << antecedent[i] << ";\t";
+				cout << "ant[" << i << "] =  " << antecedent[i] << ";"<<endl;
 				/*cout << "rev_ant[ " << antecedent[i] << " ] \t= \t{";
 				for (int j : reversed_antecedent[antecedent[i]]) {
 					cout << j << ", ";
@@ -461,7 +465,7 @@ public:
 	void print_stats() {cout << endl << "Statistics: " << endl << "===================" << endl << 
 		"### Restarts:\t\t" << num_restarts << endl <<
         "### Dynamic restarts:\t\t" << num_deletion << endl <<
-        "### Conflicts:\t\t" << num_conflicts << endl <<
+        "### Conflicts:\t\t" << num_total_conflicts << endl <<
 		"### Learned-clauses:\t" << num_learned << endl <<
 		"### Decisions:\t\t" << num_decisions << endl <<
 		"### Implications:\t" << num_assignments - num_decisions << endl <<
