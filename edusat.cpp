@@ -342,7 +342,6 @@ void Solver::test() { // tests that each clause is watched twice.
 }
 
 /*
-still not sure where to delete clauses. 
 options for now: 
 	1) inside swtich case C_UNSAT
 	2) outside of switch
@@ -441,54 +440,18 @@ SolverState Solver::BCP() {
 				// ours start
 				if (verbose_now()) cout<<"other_watch literal is" <<l2rl(other_watch )<<endl;
 
-				/* RANIA DELETE REVERSED ANTECEDENT
-				if(reversed_antecedent.find(*it)!=reversed_antecedent.end()) {
-					if (count(reversed_antecedent[*it].begin(), reversed_antecedent[*it].end(), l2v(other_watch))) {
-						cout << "clause " << *it << "is already antecedent of var " << l2v(other_watch) << endl;
-					}
-					else {
-						reversed_antecedent[*it].push_back(l2v(other_watch));
-					}  
-                } else{
-					reversed_antecedent.insert(pair<int, vector<Var>>(*it, { l2v(other_watch) }));
-				}
-				*/
 				// ours end
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
 				//ours start
 				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
 				updateLBDscore(c.cl());
 				// increase the score of variables of the learnt clause that were propagated by clauses of LBD 2
-				/*
-				* Summary:
-				* iterate over c variables:
-				*	for each variable:
-				*		if antecedent is a glue clause then increase variable's score
-				*/
 
 				if (c.size() == 2) {
 					if (verbose_now()) cout << "activity score += 5 for variable " << l2v(other_watch) << endl;
 					increaseVariableActivityScore(l2v(other_watch));
 				}
 
-				// this block is wrong, propagated is only other watch
-				/*if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - before for" << endl;
-				c.print_real_lits();cout<<""<<endl;
-				for (clause_it it = c.cl().begin(); it != c.cl().end(); ++it) { 
-					if (verbose_now()) cout << "BCP::propagating::iterate over variables of c - after for" << endl;
-					Lit lit = *it;
-					Var v = l2v(lit);
-					int ant = antecedent[v];
-					if (verbose_now()) cout << "BCP::propagating:: antecedent["<<v<< "] = " << ant << endl;
-					if (ant != -1) {
-						Clause antecedent_clause = cnf[ant];
-						if (verbose_now()) cout << "BCP::propagating:: cnf["<<ant<<"] = "; antecedent_clause.print_real_lits();
-						if (antecedent_clause.cl().size() == 2) { // if antecedent is a Glue Clause
-							if (verbose_now()) cout << "activity score += 5 for variable " << v << endl;	
-							increaseVariableActivityScore(v);
-						} antecedent_clause.print_real_lits();
-					} // if(ant != -1)
-				}// ours end */
 				break;
 			}
 			default: // replacing watch_lit
@@ -615,7 +578,6 @@ int Solver::analyze(const Clause conflicting) {
 	double activity_score = clause_activity_calculation(new_clause.cl());
 	activity_score_map.insert(pair<clause_t, double>(new_clause.cl(), activity_score));
 	double score = clause_score_calculation(new_clause.cl());
-	score_map.insert(pair<clause_t, double>(new_clause.cl(), score));
 	clauseIndx_score_map.insert(pair<int, double>(idx, score));
 
 	if (verbose_now()) {	
@@ -661,8 +623,6 @@ void Solver::increaseVariableActivityScore(Var v) {
 void Solver::updateVariableActivityScore(Var v, double new_score) {
 	if (verbose_now()) cout << " updateVariableActivityScore() Var v = " << v << endl;
 	double tmp_score = m_activity[v];
-
-// if end -> not intresting , if points to score with size=0 -> ++
 	
 	m_Score2Vars[m_activity[v]].erase(v);	
 	m_activity[v] = new_score; 
@@ -751,17 +711,14 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 	for (it = clauseIndx_score_map.begin(); it != clauseIndx_score_map.end(); it++) {
 		sorted_vec.push_back(make_pair(it->first, it->second));
 	}
-	// in c++ you can't sort map by value, must copy to vector of pairs
-	// sort using comparator funcion
+	
 	sort(sorted_vec.begin(), sorted_vec.end(), cmp);
-	//in c++, map keys can't be ordered by insertion order
 	return sorted_vec;
 }
 
 int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses) {
-    // Returns the earliest decision level at witch all variables, that were propagated will have not deleted antecedents
+    // Returns the earliest decision level at which all variables, that were propagated will have not deleted antecedents
 	// to_be_deleted_clauses has indices of clauses
-    // implemented reverse antecedents: clause index => var that got value from clause)
 	if (verbose_now()) cout << " get_dynamic_restart_backtracking_level() " << endl;
     int size = to_be_deleted_clauses.size();
     int min_level = dl-1;
@@ -773,15 +730,6 @@ int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_cla
 			Var var = it - antecedent.begin();
 			min_level = min(min_level, dlevel[var] - 1);
 		}
-
-		/*
-        // Checking that clause is antecedent for some variable
-        if(reversed_antecedent.find(clause_idx)!=reversed_antecedent.end()){
-            vector<Var> vars = reversed_antecedent[to_be_deleted_clauses[i]];
-            for(int j=0; j<vars.size(); j++){
-                min_level = min(min_level,dlevel[vars[j]]-1);
-            }
-        }*/
     }
     return max(min_level,0);
 }
@@ -818,12 +766,11 @@ void Solver::updateIndicesInWatches(int clause_index, int recalculated_index) {
     }
 }
 
-void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_index) {
+void Solver::updateAntecedentForVariable(int clause_index, int recalculated_index) {
 	if (verbose_now()) cout << " unmarkAntecedentForVariable() clause_index = " << clause_index << " recalculated_index = "
 		<< recalculated_index << endl;
     // vector<int> antecedent; // var => clause index
-	// map<int, vector<Var>> reversed_antecedent; // clause index in the cnf vector.  => vars
-	if (clause_index == recalculated_index) return; // nothing to do
+	if (clause_index == recalculated_index) return; 
 	else {
 		auto it = std::find(antecedent.begin(), antecedent.end(), clause_index);
 		if (it != antecedent.end()) {
@@ -853,15 +800,13 @@ map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>
 		}
 
 	}
-
 	return index_recalculation_map;
 }
 
 vector<int>  Solver::deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map) {
 	/*until now index_recalculation_map has only conflict clauses indices.
-	* we need to add all cnf[] indices
+	* we need to change all indices of not deleted clauses
 	*/
-	// now we need to change all not deleted clauses 
 	int conflict_number = 0;
 	vector <int> clauses_to_be_deleted;
 	for (int i = 0; i < cnf.size(); i++) {
@@ -890,23 +835,20 @@ void Solver::update_maps_watchers_antecedents(map <int, int>& index_recalculatio
 		if (recalculated_index == -1) {
 			lbd_score_map.erase(cnf[clause_index].cl());
 			activity_score_map.erase(cnf[clause_index].cl());
-			score_map.erase(cnf[clause_index].cl());
 		}
 		updateClauseIndx_score_map(clause_index, recalculated_index);
 		updateIndicesInWatches(clause_index, recalculated_index);
-		unmarkAntecedentForVariable(clause_index, recalculated_index);
+		updateAntecedentForVariable(clause_index, recalculated_index);
 	}
 }
 
 vector<int> Solver::cnf_update(vector <int> clauses_to_be_deleted) {
-	// Cnf update 
 	sort(clauses_to_be_deleted.begin(), clauses_to_be_deleted.end());
 	for (int i = 0; i < clauses_to_be_deleted.size(); i++) {
 		if (verbose_now()) cout << "errasing from cnf of size = " << cnf.size() << endl << " clauses_to_delete["<<i<<"] = "
 			<< clauses_to_be_deleted[i] << "clauses_to_delete["<<i<<"]-" <<i<< " = " << clauses_to_be_deleted[i] - i << endl;
-		cnf.erase(cnf.begin() + (clauses_to_be_deleted[i] - i)); // // resizes automatically -> http://www.cplusplus.com/reference/vector/vector/erase/
+		cnf.erase(cnf.begin() + (clauses_to_be_deleted[i] - i)); 
 	}
-
 	return clauses_to_be_deleted;
 }
 
@@ -914,22 +856,11 @@ void Solver::dynamic_backtrack(int k) {
 	if (verbose_now()) cout << "dynamic_backtrack()" << endl;
 
 	static int counter = 0;
-
-	/*
-	* sort conflict clauses by score (lbd+activity) -> sort_conflict_clauses_by_score() - done
-	* find new k if smaller level of antecedant smaller than current k.
-	* remove half without asserting clauses. -> deleteHalfLeanrtClauses(vector<pair<int, double>> vec) - done
-	*
-	*/
-
-	// global restart means that we restart if the number of conflicts during
-	// whole run of the algorithm has passed the global threshold.
-	for (trail_t::iterator it = trail.begin() + separators[k+1]; it != trail.end(); ++it) { // erasing from k
-		// separators[k+1] -> index into trail , trail.begin() + separators[k]-> place in trail where decision level k starts
-		Var v = l2v(*it); //*it = literal
-		if (dlevel[v]) { // we need the condition because of learnt unary clauses. In that case we enforce an assignment with dlevel = 0.
+	for (trail_t::iterator it = trail.begin() + separators[k+1]; it != trail.end(); ++it) { 
+		Var v = l2v(*it); 
+		if (dlevel[v]) { 
 			state[v] = VarState::V_UNASSIGNED;
-			deleteAntecedent(v); //VITALY
+			deleteAntecedent(v); 
 			if (VarDecHeuristic == VAR_DEC_HEURISTIC::MINISAT) m_curr_activity = max(m_curr_activity, m_activity[v]);
 		}
 	}
@@ -942,10 +873,6 @@ void Solver::dynamic_backtrack(int k) {
 }
 
 
-/// <summary>
-/// 
-/// </summary>
-/// <param name="k"></param>
 void Solver::backtrack(int k) {
 	if (verbose_now()) cout << "backtrack" << endl;
 	// local restart means that we restart if the number of conflicts learned in this 
@@ -965,13 +892,6 @@ void Solver::backtrack(int k) {
 	// if there is a lot of work we restart because chances are there is no solution in this way.
 
 	static int counter = 0;
-
-	/*
-	* sort conflict clauses by score (lbd+activity) -> sort_conflict_clauses_by_score() - done
-	* find new k if smaller level of antecedant smaller than current k.
-	* remove half without asserting clauses. -> deleteHalfLeanrtClauses(vector<pair<int, double>> vec) - done
-	* 
-	*/
 		
     // global restart means that we restart if the number of conflicts during
     // whole run of the algorithm has passed the global threshold.
@@ -980,7 +900,7 @@ void Solver::backtrack(int k) {
 		Var v = l2v(*it); //*it = literal
 		if (dlevel[v]) { // we need the condition because of learnt unary clauses. In that case we enforce an assignment with dlevel = 0.
 			state[v] = VarState::V_UNASSIGNED;
-			deleteAntecedent(v); //VITALY - THIS OR BLOCK DOWN
+			deleteAntecedent(v);
 			if (VarDecHeuristic == VAR_DEC_HEURISTIC::MINISAT) m_curr_activity = max(m_curr_activity, m_activity[v]);
 		}
 	}
@@ -991,12 +911,6 @@ void Solver::backtrack(int k) {
 	dl = k;	
 	assert_lit(asserted_lit);
 	antecedent[l2v(asserted_lit)] = cnf.size() - 1;
-/*
-	if(reversed_antecedent.find(cnf.size() - 1)!=reversed_antecedent.end()) {
-        reversed_antecedent[cnf.size() - 1].push_back(l2v(asserted_lit));
-    } else reversed_antecedent.insert(pair<int, vector<Var>>(cnf.size() - 1, { l2v(asserted_lit) }));
-	*/
-	// VITALY
 
 
 	conflicting_clause_idx = -1;
@@ -1054,10 +968,7 @@ void Solver::restart() {
 	reset();
 }
 
-/// <summary>
-/// Wrapper method for _solve()
-/// calls _solve() and deals with _solve() result
-/// </summary>
+
 void Solver::solve() { 
 	SolverState res = _solve(); 	
 	Assert(res == SolverState::SAT || res == SolverState::UNSAT || res == SolverState::TIMEOUT);
@@ -1081,10 +992,7 @@ void Solver::solve() {
 	return;
 }
 
-/// <summary>
-/// L2.1.SAT.pptx, slide 30
-/// </summary>
-/// <returns></returns>
+
 SolverState Solver::_solve() {
 	SolverState res;
 	while (true) {
@@ -1131,10 +1039,7 @@ SolverState Solver::_solve() {
 				//print_cnf_state();
             }
             /* place for clauses deletion */
-			if (verbose_now()) {
-				cout << "antecedents before BCP" << endl;
-				print_antecedents();
-			}
+			
 			res = BCP();
 			if (verbose_now()) {
 				cout << "antecedents after BCP" << endl;
