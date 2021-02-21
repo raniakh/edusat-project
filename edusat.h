@@ -333,6 +333,7 @@ class Solver {
 	void updateLBDscore(clause_t clause);
 	int LBD_score_calculation(clause_t clause);
 
+	void increaseVariableActivityScore_bump(Var v);
 	void increaseVariableActivityScore(Var v);
 	double clause_activity_calculation(clause_t clause);
 

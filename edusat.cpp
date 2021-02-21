@@ -382,7 +382,7 @@ SolverState Solver::BCP() {
 				// increase the score of variables of the learnt clause that were propagated by clauses of LBD 2
 				if (c.size() == 2) {
 					if (verbose_now()) cout << "activity score += 5 for variable " << l2v(other_watch) << endl;
-					//increaseVariableActivityScore(l2v(other_watch));
+					increaseVariableActivityScore(l2v(other_watch));
 				}
 				break;
 			}
@@ -685,7 +685,7 @@ void Solver::deleteAntecedent(Var variable) {
 }
 
 /* Scores */
-void Solver::increaseVariableActivityScore(Var var_idx) {
+void Solver::increaseVariableActivityScore_bump (Var var_idx) {
 	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << var_idx << endl;
 	double new_score;
 	double score = m_activity[var_idx];
@@ -707,6 +707,49 @@ void Solver::increaseVariableActivityScore(Var var_idx) {
 		m_Score2Vars[new_score].insert(var_idx);
 	else
 		m_Score2Vars[new_score] = unordered_set<int>({ var_idx });
+}
+
+
+void Solver::increaseVariableActivityScore(Var v) {
+	if (verbose_now()) cout << " increaseVariableActivityScore() Var v = " << v << endl;
+	double tmp_score = m_activity[v];
+
+	//if (m_VarsSameScore_it != m_Score2Vars_it->second.end())//BUG
+	//{ 
+	//	if(*m_VarsSameScore_it == v){
+	//		m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+	//	}
+	//}
+	if (m_Score2Vars_it != m_Score2Vars.end()) {
+		m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+	}
+
+	m_Score2Vars[m_activity[v]].erase(v);
+	m_activity[v] += 5;
+	if (m_Score2Vars.find(m_activity[v]) != m_Score2Vars.end()) {
+		m_Score2Vars[m_activity[v]].insert(v);
+	}
+	else {
+		m_Score2Vars[m_activity[v]] = unordered_set<int>({ v });
+	}
+	if (m_Score2Vars[tmp_score].size() == 0 && m_Score2Vars_it->first == tmp_score) {
+		if (m_Score2Vars_it->second.size() == 0) {
+			++m_Score2Vars_it;
+		}
+		m_Score2Vars.erase(tmp_score);
+		if (m_Score2Vars_it == m_Score2Vars.end()) {
+			--m_Score2Vars_it; // not sure leave or keep, keep for now
+			return;
+		}
+		else {
+			m_VarsSameScore_it = m_Score2Vars_it->second.begin();
+		}
+	}
+
+	//if (m_VarsSameScore_it != m_Score2Vars_it->second.end())//BUG
+	//{
+	//	cout << "************* increaseVariableActivityScore second if check m_VarsSameScore_it ******************" << endl;
+	//}
 }
 
 void Solver::updateLBDscore(clause_t clause) {
@@ -966,7 +1009,7 @@ void Solver::dynamic_backtrack(int k) {
 
 	// global restart means that we restart if the number of conflicts during
 	// whole run of the algorithm has passed the global threshold.
-	for (trail_t::iterator it = trail.begin() + separators[k]; it != trail.end(); ++it) { // erasing from k
+	for (trail_t::iterator it = trail.begin() + separators[k+1]; it != trail.end(); ++it) { // erasing from k
 		// separators[k+1] -> index into trail , trail.begin() + separators[k]-> place in trail where decision level k starts
 		Var v = l2v(*it); //*it = literal
 		if (dlevel[v]) { // we need the condition because of learnt unary clauses. In that case we enforce an assignment with dlevel = 0.
