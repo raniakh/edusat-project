@@ -444,7 +444,7 @@ SolverState Solver::BCP() {
 				if (verbose_now()) cout << "new implication <- " << l2rl(other_watch) << endl;
 				//ours start
 				// when a learnt clause is used in unit propagation, recalculate its LBD score and update it.
-				updateLBDscore(c.cl());
+				updateLBDscore(*it);
 				// increase the score of variables of the learnt clause that were propagated by clauses of LBD 2
 
 				if (c.size() == 2) {
@@ -573,11 +573,11 @@ int Solver::analyze(const Clause conflicting) {
 	}
 
 	int idx = cnf.size() - 1; // according to add_clause, new clause is added to the end of cnf. 
-	int lbd_score = LBD_score_calculation(new_clause.cl());	
-	lbd_score_map.insert(pair<clause_t, int>(new_clause.cl(), lbd_score));
-	double activity_score = clause_activity_calculation(new_clause.cl());
-	activity_score_map.insert(pair<clause_t, double>(new_clause.cl(), activity_score));
-	double score = clause_score_calculation(new_clause.cl());
+	int lbd_score = LBD_score_calculation(idx);	
+	lbd_score_map.insert(pair<int, int>(idx, lbd_score));
+	double activity_score = clause_activity_calculation(idx);
+	activity_score_map.insert(pair<int, double>(idx, activity_score));
+	double score = clause_score_calculation(idx);
 	clauseIndx_score_map.insert(pair<int, double>(idx, score));
 
 	if (verbose_now()) {	
@@ -640,8 +640,9 @@ void Solver::updateVariableActivityScore(Var v, double new_score) {
 	}
 }
 
-bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
+bool Solver::isAssertingClause(int clause_index, int conflict_level ) {
 	int counter_conflict_levels = 0;
+	clause_t clause = cnf[clause_index].cl();
 	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
 		Var v = l2v(*it);
 		if (dlevel[v] == conflict_level) {
@@ -654,17 +655,18 @@ bool Solver::isAssertingClause(clause_t clause, int conflict_level ) {
 	return (counter_conflict_levels == 1);
 }
 
-void Solver::updateLBDscore(clause_t clause) {
-	if (verbose_now()) cout << " updateLBDscore() clause = " << clause.data() << endl;
+void Solver::updateLBDscore(int clause_index) {
+	if (verbose_now()) cout << " updateLBDscore() clause id= " << clause_index << endl;
 	// if this is a learnt clause
-	if (lbd_score_map.find(clause) != lbd_score_map.end()) {
-		int new_lbd_score = LBD_score_calculation(clause);
-		lbd_score_map[clause] = new_lbd_score;
+	if (lbd_score_map.find(clause_index) != lbd_score_map.end()) {
+		int new_lbd_score = LBD_score_calculation(clause_index);
+		lbd_score_map[clause_index] = new_lbd_score;
 	}	
 }
 
-int Solver::LBD_score_calculation(clause_t clause) {
+int Solver::LBD_score_calculation(int clause_index) {
 	set<Lit> dist_levels;
+	clause_t clause = cnf[clause_index].cl();
 	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
 		Var v = l2v(*it);
 		dist_levels.insert(dlevel[v]);
@@ -672,8 +674,9 @@ int Solver::LBD_score_calculation(clause_t clause) {
 	return dist_levels.size();
 }
 /* clause activity = sum of variables activity*/
-double Solver::clause_activity_calculation(clause_t clause) { 
+double Solver::clause_activity_calculation(int clause_index) { 
 	double activity = 0.0;
+	clause_t clause = cnf[clause_index].cl();
 	for (clause_it it = clause.begin(); it != clause.end(); ++it) {
 		Var v = l2v(*it);
 		activity += m_activity[v];
@@ -681,10 +684,10 @@ double Solver::clause_activity_calculation(clause_t clause) {
 	return activity;
 }
 
-double Solver::clause_score_calculation(clause_t clause) {
+double Solver::clause_score_calculation(int clause_index) {
 	double score = 0.0;
-	int lbd_score = lbd_score_map[clause];
-	double activity_score = activity_score_map[clause];
+	int lbd_score = lbd_score_map[clause_index];
+	double activity_score = activity_score_map[clause_index];
 	score = 0.7 * lbd_score + 0.3/activity_score; // smaller score -> better clause
 	return score;
 }
@@ -696,7 +699,7 @@ bool cmp(pair<int,double> &a, pair<int,double> &b) {
 void Solver::recalculateScoreForClauses() {
 	for (int clause_idx = 0; clause_idx < cnf.size(); clause_idx++) {
 		if (clauseIndx_score_map.find(clause_idx) != clauseIndx_score_map.end()) {
-			double new_score = clause_score_calculation(cnf[clause_idx].cl());
+			double new_score = clause_score_calculation(clause_idx);
 			clauseIndx_score_map[clause_idx] = new_score;
 		}
 	}
@@ -716,7 +719,7 @@ vector<pair<int, double>> Solver::sort_conflict_clauses_by_score() {
 	return sorted_vec;
 }
 
-int Solver::get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses) {
+int Solver::get_dynamic_restart_backtracking_level(vector<int>& to_be_deleted_clauses) {
     // Returns the earliest decision level at which all variables, that were propagated will have not deleted antecedents
 	// to_be_deleted_clauses has indices of clauses
 	if (verbose_now()) cout << " get_dynamic_restart_backtracking_level() " << endl;
@@ -779,7 +782,7 @@ void Solver::updateAntecedentForVariable(int clause_index, int recalculated_inde
 	}
 }
 
-map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>> sorted_conflict_clauses) {
+map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>>& sorted_conflict_clauses) {
 	if (verbose_now()) cout << " index_recalculation_map_creation() " << endl;
 	int conf_claus_num = sorted_conflict_clauses.size();
 	int amount_to_delete = conf_claus_num / 2;
@@ -791,7 +794,7 @@ map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>
 		//        index_recalculation_map = {0:0, 1:1, 2:-1, 3:2}
 		int clause_index = sorted_conflict_clauses[i].first;
 		double score = sorted_conflict_clauses[i].second;
-		if (!isAssertingClause(cnf[clause_index].cl(), dl) && counter_removed < amount_to_delete) {
+		if (!isAssertingClause(clause_index, dl) && counter_removed < amount_to_delete) {
 			counter_removed++;
 			index_recalculation_map.insert(pair<int, int>(clause_index, -1));
 		}
@@ -833,8 +836,8 @@ void Solver::update_maps_watchers_antecedents(map <int, int>& index_recalculatio
 	for (int clause_index = 0; clause_index < cnf.size(); clause_index++) {
 		int recalculated_index = index_recalculation_map[clause_index];
 		if (recalculated_index == -1) {
-			lbd_score_map.erase(cnf[clause_index].cl());
-			activity_score_map.erase(cnf[clause_index].cl());
+			lbd_score_map.erase(clause_index);
+			activity_score_map.erase(clause_index);
 		}
 		updateClauseIndx_score_map(clause_index, recalculated_index);
 		updateIndicesInWatches(clause_index, recalculated_index);
@@ -842,7 +845,7 @@ void Solver::update_maps_watchers_antecedents(map <int, int>& index_recalculatio
 	}
 }
 
-vector<int> Solver::cnf_update(vector <int> clauses_to_be_deleted) {
+vector<int> Solver::cnf_update(vector <int>& clauses_to_be_deleted) {
 	sort(clauses_to_be_deleted.begin(), clauses_to_be_deleted.end());
 	for (int i = 0; i < clauses_to_be_deleted.size(); i++) {
 		if (verbose_now()) cout << "errasing from cnf of size = " << cnf.size() << endl << " clauses_to_delete["<<i<<"] = "
@@ -999,7 +1002,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if ( num_curr_dr_conflicts > 25000 + 625 * num_deletion && updatedActivityScores_map.empty()) {	// "dynamic restart"
+            if ( num_curr_dr_conflicts > 20000 + 500 * num_deletion && updatedActivityScores_map.empty()) {	// "dynamic restart"
 				if (verbose_now()) {
 					cout << "dynamic restart" << endl;
 					cout << "antecedents and cnf state before dynamic restart" << endl;

@@ -35,7 +35,7 @@ typedef vector<Lit> trail_t;
 
 int verbose = 0;
 double begin_time;
-double timeout = 0.0;
+double timeout = 1200;
 
 
 void Abort(string s, int i);
@@ -260,8 +260,8 @@ class Solver {
 	// map - key value, access by keys, key=score, value = list of variables that have this score
 	map<double, unordered_set<Var>, greater<double>>::iterator m_Score2Vars_it;
 	/* our helper data structures*/
-	map<clause_t, int> lbd_score_map;
-	map<clause_t, double> activity_score_map;
+	map<int, int> lbd_score_map;
+	map<int, double> activity_score_map;
     map<int, clause_t> deletion_candidates; // learnt clauses indices, that are NOT asserting
     map<int, double> clauseIndx_score_map;
 	vector<int> last_deleted_idx; // indices that were deleted on last dynamic reset (15.02.2021 update)
@@ -322,25 +322,24 @@ class Solver {
 	void updateVariableActivityScore(Var v, double new_score);
 	void increaseVariableActivityScore(Var v);
 	void update_m_Score2Vars_map();
-	bool isAssertingClause(clause_t clause, int conflict_level);
-	void updateLBDscore(clause_t clause);
-	int LBD_score_calculation(clause_t clause); 
-	double clause_activity_calculation(clause_t clause); 
-	double clause_score_calculation(clause_t clause);
+	bool isAssertingClause(int clause_index, int conflict_level);
+	void updateLBDscore(int clause_index);
+	int LBD_score_calculation(int clause_index); 
+	double clause_activity_calculation(int clause_index); 
+	double clause_score_calculation(int clause);
 	void recalculateScoreForClauses();
 	vector<pair<int, double>> sort_conflict_clauses_by_score();
     void updateIndicesInWatches(int clause_index, int recalculated_index);
     void updateAntecedentForVariable(int clause_index, int recalculated_index);
 	void updateClauseIndx_score_map(int clause_index, int recalculated_index);
-    vector<int> deleteHalfLeanrtClauses(vector<pair<int, double>> vec);
 
 	// those 4 function is equvivalent of deleteHalfLeanrtClauses()
-	map <int, int> index_recalculation_map_creation(vector<pair<int, double>> vec);
+	map <int, int> index_recalculation_map_creation(vector<pair<int, double>>& vec);
 	vector<int> deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map);
 	void update_maps_watchers_antecedents(map <int, int>& index_recalculation_map);
-	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
+	vector<int> cnf_update(vector <int>& clauses_to_be_deleted);
 	void dynamic_backtrack(int k);
-    int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);
+    int get_dynamic_restart_backtracking_level(vector<int>& to_be_deleted_clauses);
 	void deleteAntecedent(Var variable);
 
 
