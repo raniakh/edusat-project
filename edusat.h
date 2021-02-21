@@ -339,7 +339,7 @@ class Solver {
 	// those 4 function is equvivalent of deleteHalfLeanrtClauses()
 	map <int, int> index_recalculation_map_creation(vector<pair<int, double>> vec);
 	vector<int> deletion_candidates_creation_and_updating_IndexRecalculationMap(map <int, int>& index_recalculation_map);
-	void update_maps_watchers_antecedents(map <int, int> index_recalculation_map);
+	void update_maps_watchers_antecedents(map <int, int>& index_recalculation_map);
 	vector<int> cnf_update(vector <int> clauses_to_be_deleted);
 	void dynamic_backtrack(int k);
     int get_dynamic_restart_backtracking_level(vector<int> to_be_deleted_clauses);

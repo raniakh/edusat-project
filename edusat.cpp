@@ -830,25 +830,6 @@ void Solver::unmarkAntecedentForVariable(int clause_index, int recalculated_inde
 			std::replace(antecedent.begin(), antecedent.end(), clause_index, recalculated_index);
 		}
 	}
-	/*else {
-		if (reversed_antecedent.find(clause_index) != reversed_antecedent.end()) { // if clause is antecedent for some variables 
-			if (!reversed_antecedent[clause_index].empty()) {
-				vector<Var> vars = reversed_antecedent[clause_index];
-				for (int j = 0; j < vars.size(); j++) {
-					antecedent[vars[j]] = recalculated_index;
-				}
-				if (reversed_antecedent.find(recalculated_index) != reversed_antecedent.end()) {
-					auto pos = reversed_antecedent.find(recalculated_index);
-					reversed_antecedent.erase(pos);
-				}
-				if (recalculated_index != -1)  reversed_antecedent.insert(pair<int, vector<int>>(recalculated_index, vars));
-
-			}
-			// delete clause from reversed_antecedent if index changed
-			auto pos = reversed_antecedent.find(clause_index);
-			reversed_antecedent.erase(pos);
-		}	
-	}*/
 }
 
 map <int, int> Solver::index_recalculation_map_creation(vector<pair<int, double>> sorted_conflict_clauses) {
@@ -901,7 +882,7 @@ vector<int>  Solver::deletion_candidates_creation_and_updating_IndexRecalculatio
 	return clauses_to_be_deleted;
 }
 
-void Solver::update_maps_watchers_antecedents(map <int, int> index_recalculation_map) {
+void Solver::update_maps_watchers_antecedents(map <int, int>& index_recalculation_map) {
 	if (verbose_now()) cout << " watchers_and_antecedent_update() " << endl;
 	// Watches and Atecendents update
 	for (int clause_index = 0; clause_index < cnf.size(); clause_index++) {
@@ -1110,7 +1091,7 @@ SolverState Solver::_solve() {
 		if (timeout > 0 && cpuTime() - begin_time > timeout) return SolverState::TIMEOUT;
 		while (true) {
 		    /* place for clauses deletion */
-            if ( num_curr_dr_conflicts > 20000 + 500 * num_deletion && updatedActivityScores_map.empty()) {	// "dynamic restart"
+            if ( num_curr_dr_conflicts > 25000 + 625 * num_deletion && updatedActivityScores_map.empty()) {	// "dynamic restart"
 				if (verbose_now()) {
 					cout << "dynamic restart" << endl;
 					cout << "antecedents and cnf state before dynamic restart" << endl;

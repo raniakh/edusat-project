@@ -3,9 +3,9 @@ C:\Users\rania\source\repos\edusat\edusat\edusat.h(424,21): warning C4018: '<': 
 C:\Users\rania\source\repos\edusat\edusat\edusat.h(433,21): warning C4018: '<': signed/unsigned mismatch
 C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(737,38): warning C4018: '<': signed/unsigned mismatch
 C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(811,22): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(886,20): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(907,42): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(923,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(867,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(888,42): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rania\source\repos\edusat\edusat\edusat.cpp(904,20): warning C4018: '<': signed/unsigned mismatch
   options.cpp
   Generating Code...
 edusat.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
